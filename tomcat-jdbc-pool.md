@@ -13,7 +13,7 @@
 3. Commons DBCP 拥有 60 多个类。tomcat-jdbc-pool 核心只有 8 个类。因此为了未来需求变更着想，肯定需要更少的改动。我们真正需要的只是连接池本身，其余的只是附属。
 4. Commons DBCP 使用静态接口，因此对于指定版本的 JRE，只能采用正确版本的 DBCP，否则就会出现 `NoSuchMethodException` 异常。   
 5. 当DBCP 可以用其他更简便的实现来替代时，实在不值得重写那 60 个类。     
-6. Tomcat JDBC 连接池无需为库本身添加额外线程，就能获取异步获取连接，》》。   
+6. Tomcat JDBC 连接池无需为库本身添加额外线程，就能获取异步获取连接。   
 7. Tomcat JDBC 连接池是 Tomcat 的一个模块，依靠 Tomcat JULI 这个简化了的日志架构。   
 8. 使用 `javax.sql.PooledConnection` 接口获取底层连接。   
 9. 防止饥饿。如果池变空，线程将等待一个连接。当连接返回时，池就将唤醒正确的等待线程。大多数连接池只会一直维持饥饿状态。
@@ -53,16 +53,17 @@ Tomcat JDBC 连接池还具有一些其他连接池实现所没有的特点：
 
 ### Apache Tomcat 容器内部   
 
-Tomcat 连接池被配置为一个资源，》》》   在[》？Tomcat JDBC 文档](http://tomcat.apache.org/tomcat-8.0-doc/jndi-datasource-examples-howto.html)中有所说明，唯一的区别在于，你必须指定 `factory` 属性，并将其值设为  `org.apache.tomcat.jdbc.pool.DataSourceFactory`。  
+在[Tomcat JDBC 文档](》需要更换中文页面http://tomcat.apache.org/tomcat-8.0-doc/jndi-datasource-examples-howto.html)中，Tomcat 连接池被配置为一个资源。唯一的区别在于，你必须指定 `factory` 属性，并将其值设为 `org.apache.tomcat.jdbc.pool.DataSourceFactory`。  
+
 
 
 ### 独立性  
 
-连接池只有另一个 tomcat-juli.jar。`org.apache.tomcat.jdbc.pool.DataSource`   
+连接池只有一个从属文件，tomcat-juli.jar。要想在使用 bean 实例化的单一项目中使用池，实例化的 Bean 为`org.apache.tomcat.jdbc.pool.DataSource`。下文讲到将连接池配置为 JNDI 资源时会涉及到同一属性，也是用来将数据源配置成 bean 的。   
 
 ### JMX
 
-连接池对象暴露了一个可以被注册的 MBean。为了让连接池对象创建 MBean，`jmxEnabled` 标志必须设为 true。这并不是说连接池》。在像 Tomcat 这样的容器中，Tomcat 本身注册》。`org.apache.tomcat.jdbc.pool.DataSource` 对象会注册实际的连接池 MBean。》》 
+连接池对象暴露了一个可以被注册的 MBean。为了让连接池对象创建 MBean，`jmxEnabled` 标志必须设为 true。这并不是说连接池会注册到 MBean 服务器。在像 Tomcat 这样的容器中，Tomcat 本身注册就在 MBean 服务器上注册了 DataSource。`org.apache.tomcat.jdbc.pool.DataSource` 对象会注册实际的连接池 MBean。如果你在容器外运行，可以将 DataSource 注册在任何你指定的对象名下，然后将这种注册传播到底层池。要想这样做，你必须调用 `mBeanServer.registerMBean(dataSource.getPool().getJmxPool(),objectname)`。在调用之前，一定要保证通过调用 `dataSource.createPool()` 创建了池。
 
 
 ## 属性  
@@ -80,7 +81,7 @@ Tomcat 连接池被配置为一个资源，》》》   在[》？Tomcat JDBC 文
 
 ### 系统属性    
 
-系统属性作用于 JVM 范围，影响创建于 JVM 内的所有池。》资源池还是连接池？》   
+系统属性作用于 JVM 范围，影响创建于 JVM 内的所有池。
 
 |属性|描述|
 |---|---|
@@ -93,8 +94,8 @@ Tomcat 连接池被配置为一个资源，》》》   在[》？Tomcat JDBC 文
 |`defaultAutoCommit`|（布尔值）连接池所创建的连接默认自动提交状态。如果未设置，则默认采用 JDBC 驱动的缺省值（如果未设置，则不会调用 `setAutoCommit` 方法）。|   
 |`defaultReadOnly`|（布尔值）连接池所创建的连接默认只读状态。如果未设置，将不会调用 `setReadOnly` 方法。（有些驱动并不支持只读模式，比如：informix）|  
 |`defaultTransactionIsolation`|（字符串）连接池所创建的连接的默认事务隔离状态。取值范围为：（参考 javadoc）<br/><li>`NONE`</li><li>`READ_COMMITTED`</li><li>`READ_UNCOMMITTED`</li><li>`REPEATABLE_READ`</li><li>`SERIALIZABLE`</li><br/>如果未设置该值，则不会调用任何方法，默认为 JDBC 驱动。|    
-|`defaultCatalog`|（字符串）连接池所创建的连接的默认catalog。》数据字典？》|  
-|`driverClassName`|（字符串）所要使用的 JDBC 驱动的完全限定的 Java 类名。该驱动必须能从同一个类加载器》》tomcat-jdbc.jar访问|  
+|`defaultCatalog`|（字符串）连接池所创建的连接的默认catalog。|  
+|`driverClassName`|（字符串）所要使用的 JDBC 驱动的完全限定的 Java 类名。该驱动必须能从与 tomcat-jdbc.jar 同样的类加载器访问|  
 |`username`|（字符串）传入 JDBC 驱动以便建立连接的连接用户名。注意，`DataSource.getConnection(username,password)` 方法默认不会使用传入该方法内的凭证，但会使用这里的配置信息。可参看 `alternateUsernameAllowed` 了解更多详情。|  
 |`password`|（字符串）传入 JDBC 驱动以便建立连接的连接密码。注意，`DataSource.getConnection(username,password)` 方法默认不会使用传入该方法内的凭证，但会使用这里的配置信息。可参看 `alternateUsernameAllowed` 了解更多详情。|
 |`maxActive`|（整形值）池同时能分配的活跃连接的最大数目。默认为 `100`。|
@@ -125,7 +126,7 @@ Tomcat 连接池被配置为一个资源，》》》   在[》？Tomcat JDBC 文
 |属性|描述|  
 |---|---|  
 |` initSQL `|字符串值。当连接第一次创建时，运行的自定义查询。默认值为 `null`。|  
-|` jdbcInterceptors `|字符串。继承自类 `org.apache.tomcat.jdbc.pool.JdbcInterceptor` 的子类类名列表，由分号分隔。关于格式及范例，可参见下文的配置 JDBC 拦截器》》。<br/><br/> `java.sql.Connection` 对象》》 <br/><br/>预定义的拦截器有：<br/><li>`org.apache.tomcat.jdbc.pool.interceptor`</li><li>`ConnectionState`——记录自动提交、只读、catalog以及事务隔离级别等状态。</li><li>`org.apache.tomcat.jdbc.pool.interceptor`</li><li>`StatementFinalizer`——记录打开的语句，并当连接返回池后关闭它们。</li><br/><br/>有关更多预定义拦截器的详尽描述，可参阅[JDBC 拦截器》》] |  
+|` jdbcInterceptors `|字符串。继承自类 `org.apache.tomcat.jdbc.pool.JdbcInterceptor` 的子类类名列表，由分号分隔。关于格式及范例，可参见下文的配置 JDBC 拦截器。<br/><br/> 这些拦截器将会插入到 `java.sql.Connection` 对象的操作队列中。 <br/><br/>预定义的拦截器有：<br/><li>`org.apache.tomcat.jdbc.pool.interceptor`</li><li>`ConnectionState`——记录自动提交、只读、catalog以及事务隔离级别等状态。</li><li>`org.apache.tomcat.jdbc.pool.interceptor`</li><li>`StatementFinalizer`——记录打开的语句，并当连接返回池后关闭它们。</li><br/><br/>有关更多预定义拦截器的详尽描述，可参阅JDBC 拦截器 |  
 |` validationInterval `|长整型值。为避免过度验证而设定的频率时间值（以秒计）。最多以这种频率运行验证。如果连接应该进行验证，但却没能在此间隔时间内得到验证，则会重新对其进行验证。默认为 `30000`（30 秒）。|  
 |` jmxEnabled `|布尔值。是否利用 JMX 注册连接池。默认为 `true`。|  
 |` fairQueue `|布尔值。假如想用真正的 FIFO 方式公平对待 `getConnection` 调用，则取值为 `true`。对空闲连接列表将采用 `org.apache.tomcat.jdbc.pool.FairBlockingQueue` 实现。默认值为 `true`。如果想使用异步连接获取功能，则必须使用该标志。<br/>设置该标志可保证线程能够按照连接抵达顺序来接收连接。<br/>在性能测试时，锁及锁等待的实现方式有很大差异。当 `fairQueue=true` 时，根据所运行的操作系统，存在一个决策过程。假如系统运行在 Linux 操作系统（属性 `os.name = linux`）上，为了禁止这个 Linux 专有行为，但仍想使用公平队列，那么只需在连接池类加载之前，将 `org.apache.tomcat.jdbc.pool.FairBlockingQueue.ignoreOS=true` 添加到系统属性上。|  
@@ -135,10 +136,10 @@ Tomcat 连接池被配置为一个资源，》》》   在[》？Tomcat JDBC 文
 |` suspectTimeout `|整型值。超时时间（以秒计）。默认值为 `0`。<br/>类似于 `removeAbandonedTimeout`，但不会把连接当做废弃连接从而有可能关闭连接。如果 `logAbandoned` 设为 `true`，它只会记录下警告。如果该值小于或等于 0，则不会执行任何怀疑式检查。如果超时值大于 0，而连接还没有被废弃，或者废弃检查被禁用时，才会执行怀疑式检查。如果某个连接被怀疑到，则记录下 WARN 信息并发送一个 JMX 通知。|   
 |` rollbackOnReturn `|布尔值。如果 `autoCommit==false`，那么当连接返回池中时，池会在连接上调用回滚方法，从而终止事务。默认值为 `false`。|  
 |` commitOnReturn `|布尔值。如果 `autoCommit==false`，那么当连接返回池中时，池会在连接上调用提交方法，从而完成事务；如果 `rollbackOnReturn==true`，则忽略该属性。默认值为 `false`。|  
-|` alternateUsernameAllowed `|布尔值。出于性能考虑，JDBC 连接池默认会忽略 [`DataSource.getConnection(username,password)`](http://docs.oracle.com/javase/6/docs/api/javax/sql/DataSource.html#getConnection(java.lang.String,%20java.lang.String))调用，只返回之前池化的具有全局配置属性 `username ` 和 `password`的连接。<br/><br/>但经过配置，连接池还可以允许使用不同的凭证来请求每一个连接。为了启用这项在[`DataSource.getConnection(username,password)`](http://docs.oracle.com/javase/6/docs/api/javax/sql/DataSource.html#getConnection(java.lang.String,%20java.lang.String))调用中描述的功能，只需将 `alternateUsernameAllowed` 设为 `true`。<br/>》》》<br/>默认值为 `false`。<br/>该属性作为一个改进方案，被添加到了 [bug 50025](https://bz.apache.org/bugzilla/show_bug.cgi?id=50025) 中。 |  
+|` alternateUsernameAllowed `|布尔值。出于性能考虑，JDBC 连接池默认会忽略 [`DataSource.getConnection(username,password)`](http://docs.oracle.com/javase/6/docs/api/javax/sql/DataSource.html#getConnection(java.lang.String,%20java.lang.String))调用，只返回之前池化的具有全局配置属性 `username ` 和 `password`的连接。<br/><br/>但经过配置，连接池还可以允许使用不同的凭证来请求每一个连接。为了启用这项在[`DataSource.getConnection(username,password)`](http://docs.oracle.com/javase/6/docs/api/javax/sql/DataSource.html#getConnection(java.lang.String,%20java.lang.String))调用中描述的功能，只需将 `alternateUsernameAllowed` 设为 `true`。<br/>如果你请求一个连接，凭证为 user 1/password 1，而连接之前使用的是 user 2/password 2 凭证，那么连接将被关闭，重新利用请求的凭证来开启。按照这种方式，池的容量始终以全局级别管理，而不是限于模式（schema）级别。<br/>默认值为 `false`。<br/>该属性作为一个改进方案，被添加到了 [bug 50025](https://bz.apache.org/bugzilla/show_bug.cgi?id=50025) 中。 |  
 |` dataSource `|（javax.sql.DataSource）将数据源注入连接池，从而使池利用数据源来获取连接，而不是利用 `java.sql.Driver` 接口来建立连接。它非常适于使用数据源（而非连接字符串）来池化 XA 连接或者已建立的连接时。默认值为 `null`。|  
 |` dataSourceJNDI `|字符串。在 JNDI 中查找的数据源的 JNDI 名称，随后将用于建立数据库连接。参看 `datasource` 属性的介绍。默认值为 `null`。|  
-|` useDisposableConnectionFacade `|布尔值。如果希望在连接上放上一个facade，从而使连接在关闭后无法重用，则要将值设为 `true`。》》》默认值为 `true`。|  
+|` useDisposableConnectionFacade `|布尔值。如果希望在连接上放上一个门面对象，从而使连接在关闭后无法重用，则要将值设为 `true`。这能防止线程继续引用一个已被关闭的连接，并继续在连接上查询。默认值为 `true`。|  
 |` logValidationErrors `|布尔值。设为 `true` 时，能将验证阶段的错误记录到日志文件中，错误会被记录为 SEVERE。考虑到了向后兼容性，默认值为 `false`。|
 |` propagateInterruptState `|布尔值。传播已中断的线程（还没有清除中断状态）的中断状态。考虑到了向后兼容性，默认值为 `false`。|  
 |` ignoreExceptionOnPreLoad `|布尔值。在初始化池时，是否忽略连接创建错误。取值为 `true`时表示忽略；设为 `false` 时，抛出异常，从而宣告池初始化失败。默认值为 `false`。|  
@@ -183,7 +184,7 @@ JDBC 拦截器是通过 **jdbcInterceptor** 属性来配置的。该属性值包
 
 ### org.apache.tomcat.jdbc.pool.interceptor.ConnectionState  
 
-它能为下列属性缓存连接：`autoCommit`、`readOnly`、`transactionIsolation` 及 `catalog`。这是一个性能增强》》》，当利用已设定的值来调用 getter 与 setter 时，它能够避免往返数据库。
+它能为下列属性缓存连接：`autoCommit`、`readOnly`、`transactionIsolation` 及 `catalog`。这是一种性能增强功能，当利用已设定的值来调用 getter 与 setter 时，它能够避免往返数据库。
 
 ### org.apache.tomcat.jdbc.pool.interceptor.StatementFinalizer
 
@@ -239,12 +240,12 @@ JDBC 拦截器是通过 **jdbcInterceptor** 属性来配置的。该属性值包
 |属性|描述|
 |---|---|
 |` notifyPool `|（以字符串形式表示的布尔值）如果希望用 `SlowQueryReportJmx` MBean 发送 JMX 通知，则设为 `false`。默认为 `true`|
-|` objectName `|字符串。定义一个有效的 `javax.management.ObjectName` 字符串，用于注册》》。默认值为 `null`。可以使用 `tomcat.jdbc:type=org.apache.tomcat.jdbc.pool.interceptor.SlowQueryReportJmx,name=the-name-of-the-pool` 来注册对象。 |
- 
+|` objectName `|字符串。定义一个有效的 `javax.management.ObjectName` 字符串，用于将这一对象注册到平台所用的 mbean 服务器上。默认值为 `null`。可以使用 `tomcat.jdbc:type=org.apache.tomcat.jdbc.pool.interceptor.SlowQueryReportJmx,name=the-name-of-the-pool` 来注册对象。 |
+
 
 ### org.apache.tomcat.jdbc.pool.interceptor.ResetAbandonedTimer   
 
-》》。这意味着如果超时为 30 秒，而你使用连接运行了 10 个 10秒的查询，那么它》就会被标为废弃，并可能依靠 `abandonWhenPercentageFull` 属性重新声明》。每次成功地在连接上执行操作或执行查询时，该拦截器就会重设签出计时器。  
+当连接签出池中后，废弃计时器即开始计时。这意味着如果超时为 30 秒，而你使用连接运行了 10 个 10秒的查询，那么它就会被标为废弃，并可能依靠 `abandonWhenPercentageFull` 属性重新声明。每次成功地在连接上执行操作或执行查询时，该拦截器就会重设签出计时器。  
 
 
 ## 代码范例  
@@ -289,8 +290,8 @@ Tomcat JDBC 连接池支持异步连接获取，无需为池库添加任何额�
 拦截器必须扩展自 `org.apache.tomcat.jdbc.pool.JdbcInterceptor` 类。该类相当简单，你必须利用一个无参数构造函数。  
 
 ```
-  public JdbcInterceptor() {
-  }  
+public JdbcInterceptor() {
+}  
 ```  
 
 当从连接池借出一个连接时，拦截器能够通过实现以下方法，初始化这一事件或以一些其他形式来响应该事件。
@@ -303,26 +304,26 @@ Tomcat JDBC 连接池支持异步连接获取，无需为池库添加任何额�
 
 `public Object invoke(Object proxy, Method method, Object[] args) throws Throwable`  
 
-`Method method` 是被调用的实际方法，`Object[] args` 是参数。通过观察下面这个非常简单的例子，我们可以解释如果当连接已经关闭时，如何让 `java.sql.Connection.close()` 的调用变得 》noop》。   
+`Method method` 是被调用的实际方法，`Object[] args` 是参数。通过观察下面这个非常简单的例子，我们可以解释如果当连接已经关闭时，如何让 `java.sql.Connection.close()` 的调用变得无用。   
 
 ```   
-  if (CLOSE_VAL==method.getName()) {
-      if (isClosed()) return null; //noop for already closed.
-  }
-  return super.invoke(proxy,method,args);  
+if (CLOSE_VAL==method.getName()) {
+if (isClosed()) return null; //noop for already closed.
+}
+return super.invoke(proxy,method,args);  
 
 ```
 
 #### 池启动与停止  
 
-当连接池开启或关闭时，你可以得到相关通知。可能每个拦截器类只通知一次，即使它是一个实例方法。也可能使用当前未连接到池中的拦截器》》》
+当连接池开启或关闭时，你可以得到相关通知。可能每个拦截器类只通知一次，即使它是一个实例方法。也可能使用当前未连接到池中的拦截器来通知你。
 
 ```   
-  public void poolStarted(ConnectionPool pool) {
-  }
+public void poolStarted(ConnectionPool pool) {
+}
 
-  public void poolClosed(ConnectionPool pool) {
-  }
+public void poolClosed(ConnectionPool pool) {
+}
 
 ```  
 
@@ -333,8 +334,8 @@ Tomcat JDBC 连接池支持异步连接获取，无需为池库添加任何额�
 拦截器可以通过 `jdbcInterceptors` 属性或 `setJdbcInterceptors` 方法来配置。拦截器也可以有属性，可以通过如下方式来配置：   
 
 ```   
-  String jdbcInterceptors=
-    "org.apache.tomcat.jdbc.pool.interceptor.ConnectionState(useEquals=true,fast=yes)"
+String jdbcInterceptors=
+"org.apache.tomcat.jdbc.pool.interceptor.ConnectionState(useEquals=true,fast=yes)"
 
 ```
 
@@ -343,24 +344,24 @@ Tomcat JDBC 连接池支持异步连接获取，无需为池库添加任何额�
 既然拦截器也有属性，那么你也可以读取其中的属性值。你可以重写 `setProperties` 方法。   
 
 ```  
-  public void setProperties(Map<String, InterceptorProperty> properties) {
-     super.setProperties(properties);
-     final String myprop = "myprop";
-     InterceptorProperty p1 = properties.get(myprop);
-     if (p1!=null) {
-         setMyprop(Long.parseLong(p1.getValue()));
-     }
-  }
+public void setProperties(Map<String, InterceptorProperty> properties) {
+super.setProperties(properties);
+final String myprop = "myprop";
+InterceptorProperty p1 = properties.get(myprop);
+if (p1!=null) {
+setMyprop(Long.parseLong(p1.getValue()));
+}
+}
 
 ```
 
 ### 获取实际的 JDBC 连接  
 
-连接池围绕实际的连接创建包装器，为的是能够正确地》。同样，为了执行特定的功能，我们也可以在这些包装器中创建拦截器。如果不需要获取实际的连接，可以使用 `javax.sql.PooledConnection` 接口。   
+连接池围绕实际的连接创建包装器，为的是能够正确地池化。同样，为了执行特定的功能，我们也可以在这些包装器中创建拦截器。如果不需要获取实际的连接，可以使用 `javax.sql.PooledConnection` 接口。   
 
 ```  
-  Connection con = datasource.getConnection();
-  Connection actual = ((javax.sql.PooledConnection)con).getConnection();
+Connection con = datasource.getConnection();
+Connection actual = ((javax.sql.PooledConnection)con).getConnection();
 
 ```  
 
