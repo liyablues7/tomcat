@@ -32,7 +32,7 @@ Tomcat 可以使用许多附件组件。这些附加组件有可能是由用户�
 
 ## 组件列表   
 
-### 完整的通用日志实现  》》》   
+### 完整的通用日志实现   
 
 Tomcat 使用一个改名的包，硬编码的通用日志 API（commons-logging API）实现来使用 java.util.logging API。通用日志额外的组件构建了一个完备的包，重新命名的通用日志实现来替代 Tomcat 所提供的实现。参考[日志记录](http://tomcat.apache.org/tomcat-8.0-doc/logging.html)页面了解使用方法。	
 
@@ -44,7 +44,7 @@ Tomcat 为可能用于解决 Web 服务引用的 JSR 109 提供了》》工厂�
 
  
 
-### JMX 远端生命周期侦听器（JMX Remote Lifecycle Listener）  
+### JMX 远程生命周期侦听器（JMX Remote Lifecycle Listener）  
 
 JMX 协议需要 JMX 服务器（在这里指的就是 Tomcat）在两个网络端口上进行侦听。其中一个端口通过配置可以是固定端口，而另外一个则是随机选择的。这就很难穿越防火墙来使用 JMX 。JMX 远端生命周期侦听器能实现两个固定端口，从而简化了穿越防火墙连接到 JMX 的过程。
 

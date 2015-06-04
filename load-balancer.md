@@ -9,4 +9,4 @@
 
 ## 使用 Apache HTTP Server 2.x 
 
-请参阅 Apache HTTP Server 2.2 的 mod_proxy 文档。》。新版的 mod_proxy 不仅能够》》 Apache HTTP Server 2.0 ，而且必须使用 Apache HTTP Server 2.2 的代码独立编译。
+请参阅 Apache HTTP Server 2.2 的 mod_proxy 文档。它能支持 HTTP 或 AJP 负载均衡。新版的 mod_proxy 也能适用于 Apache HTTP Server 2.0 ，但必须使用 Apache HTTP Server 2.2 的代码独立编译。

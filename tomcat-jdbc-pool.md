@@ -1,4 +1,36 @@
-## 目录  
+## 目录   
+
+- 简介  
+- 使用方法  
+	1. 附加功能  
+	2. Apache Tomcat 容器内部
+	3. 独立性    
+	4. JMX  
+- 属性  
+	1. JNDI 工厂与类型
+ 	2. 系统属性  
+ 	3. 常用属性  
+ 	4. Tomcat JDBC 增强属性  
+- 高级用法  
+	1. JDBC 拦截器   
+	2. 配置 JDBC 拦截器    
+	3. org.apache.tomcat.jdbc.pool.JdbcInterceptor  
+	4. org.apache.tomcat.jdbc.pool.interceptor.ConnectionState  
+	5. org.apache.tomcat.jdbc.pool.interceptor.StatementFinalizer  
+	6. org.apache.tomcat.jdbc.pool.interceptor.StatementCache  
+	7. org.apache.tomcat.jdbc.pool.interceptor.StatementDecoratorInterceptor  
+	8. org.apache.tomcat.jdbc.pool.interceptor.QueryTimeoutInterceptor
+	9. org.apache.tomcat.jdbc.pool.interceptor.SlowQueryReport
+	10. org.apache.tomcat.jdbc.pool.interceptor.SlowQueryReportJmx
+	11. org.apache.tomcat.jdbc.pool.interceptor.ResetAbandonedTimer
+- 代码范例  
+	1. 普通 Java 
+	2. 作为资源使用  
+	3. 异步连接获取  
+	4. 拦截器
+	5. 获取实际的 JDBC 连接  
+- 构建  
+	- 由源码进行构建  
 
 ## 简介   
 
@@ -41,7 +73,7 @@ Tomcat JDBC 连接池还具有一些其他连接池实现所没有的特点：
 
 对于熟悉 Commons DBCP 的人来说，转而使用 Tomcat 连接池是非常简单的事。从其他连接池转换过来也非常容易。   
 
-### 附加功能   
+### 1. 附加功能   
 
 除了其他多数连接池能够提供的功能外，Tomcat 连接池还提供了一些附加功能：   
 
@@ -51,17 +83,17 @@ Tomcat JDBC 连接池还具有一些其他连接池实现所没有的特点：
 - `fairQueue` 将 fair 标志设为 true，以达成线程公平性，或使用异步连接获取。       
 
 
-### Apache Tomcat 容器内部   
+### 2. Apache Tomcat 容器内部   
 
 在[Tomcat JDBC 文档](》需要更换中文页面http://tomcat.apache.org/tomcat-8.0-doc/jndi-datasource-examples-howto.html)中，Tomcat 连接池被配置为一个资源。唯一的区别在于，你必须指定 `factory` 属性，并将其值设为 `org.apache.tomcat.jdbc.pool.DataSourceFactory`。  
 
 
 
-### 独立性  
+### 3. 独立性  
 
 连接池只有一个从属文件，tomcat-juli.jar。要想在使用 bean 实例化的单一项目中使用池，实例化的 Bean 为`org.apache.tomcat.jdbc.pool.DataSource`。下文讲到将连接池配置为 JNDI 资源时会涉及到同一属性，也是用来将数据源配置成 bean 的。   
 
-### JMX
+### 4. JMX
 
 连接池对象暴露了一个可以被注册的 MBean。为了让连接池对象创建 MBean，`jmxEnabled` 标志必须设为 true。这并不是说连接池会注册到 MBean 服务器。在像 Tomcat 这样的容器中，Tomcat 本身注册就在 MBean 服务器上注册了 DataSource。`org.apache.tomcat.jdbc.pool.DataSource` 对象会注册实际的连接池 MBean。如果你在容器外运行，可以将 DataSource 注册在任何你指定的对象名下，然后将这种注册传播到底层池。要想这样做，你必须调用 `mBeanServer.registerMBean(dataSource.getPool().getJmxPool(),objectname)`。在调用之前，一定要保证通过调用 `dataSource.createPool()` 创建了池。
 
@@ -70,7 +102,7 @@ Tomcat JDBC 连接池还具有一些其他连接池实现所没有的特点：
 
 为了能够顺畅地在 Commons DBCP 与 Tomcat JDBC 连接池 之间转换，大多数属性名称及其含义都是相同的。   
 
-### JNDI 工厂与类型    
+### 1. JNDI 工厂与类型    
 
 |属性|描述|
 |---|---|
@@ -79,7 +111,7 @@ Tomcat JDBC 连接池还具有一些其他连接池实现所没有的特点：
 
 
 
-### 系统属性    
+### 2. 系统属性    
 
 系统属性作用于 JVM 范围，影响创建于 JVM 内的所有池。
 
@@ -87,7 +119,7 @@ Tomcat JDBC 连接池还具有一些其他连接池实现所没有的特点：
 |---|---|
 |`org.apache.tomcat.jdbc.pool.onlyAttemptCurrentClassLoader`|布尔值，默认为 `false`。控制动态类（如JDBC 驱动、拦截器、验证器）的加载。如果采用默认值，池会首先利用当前类加载器（比如已经加载池类的类加载器）加载类；如果类加载失败，则尝试利用线程上下文加载器加载。取值为 `true` 时，会向后兼容 Apache Tomcat 8.0.8 及更早版本，只会采用当前类加载器。如果未设置，则取默认值。|
 
-### 常用属性   
+### 3. 常用属性   
 
 |属性|描述|
 |---|---|
@@ -121,7 +153,7 @@ Tomcat JDBC 连接池还具有一些其他连接池实现所没有的特点：
 |`maxOpenPreparedStatements`|（整型值）未使用的属性|  
 
 
-### Tomcat JDBC 增强属性     
+### 4. Tomcat JDBC 增强属性     
 
 |属性|描述|  
 |---|---|  
@@ -147,7 +179,7 @@ Tomcat JDBC 连接池还具有一些其他连接池实现所没有的特点：
 
 ## 高级用法    
 
-### JDBC 拦截器    
+### 1. JDBC 拦截器    
 
 要想看看拦截器使用方法的具体范例，可以看看 `org.apache.tomcat.jdbc.pool.interceptor.ConnectionState`。这个简单的拦截器缓存了三个属性：`autoCommit`、`readOnly`、`transactionIsolation`，为的是避免系统与数据库之间无用的往返。  
 
@@ -157,7 +189,7 @@ Tomcat JDBC 连接池还具有一些其他连接池实现所没有的特点：
 
 
 
-### 配置 JDBC 拦截器   
+### 2. 配置 JDBC 拦截器   
 
 JDBC 拦截器是通过 **jdbcInterceptor** 属性来配置的。该属性值包含一列由分号分隔的类名。如果这些类名非完全限定，就会在它们的前面加上  `org.apache.tomcat.jdbc.pool.interceptor.` 前缀。
 
@@ -241,7 +273,7 @@ JDBC 拦截器是通过 **jdbcInterceptor** 属性来配置的。该属性值包
 |---|---|
 |` notifyPool `|（以字符串形式表示的布尔值）如果希望用 `SlowQueryReportJmx` MBean 发送 JMX 通知，则设为 `false`。默认为 `true`|
 |` objectName `|字符串。定义一个有效的 `javax.management.ObjectName` 字符串，用于将这一对象注册到平台所用的 mbean 服务器上。默认值为 `null`。可以使用 `tomcat.jdbc:type=org.apache.tomcat.jdbc.pool.interceptor.SlowQueryReportJmx,name=the-name-of-the-pool` 来注册对象。 |
-
+ 
 
 ### org.apache.tomcat.jdbc.pool.interceptor.ResetAbandonedTimer   
 
@@ -258,6 +290,60 @@ JDBC 拦截器是通过 **jdbcInterceptor** 属性来配置的。该属性值包
 下面这个简单的范例展示了如何创建并使用数据源：  
 
 ```
+  import java.sql.Connection;
+  import java.sql.ResultSet;
+  import java.sql.Statement;
+
+  import org.apache.tomcat.jdbc.pool.DataSource;
+  import org.apache.tomcat.jdbc.pool.PoolProperties;
+
+  public class SimplePOJOExample {
+
+      public static void main(String[] args) throws Exception {
+          PoolProperties p = new PoolProperties();
+          p.setUrl("jdbc:mysql://localhost:3306/mysql");
+          p.setDriverClassName("com.mysql.jdbc.Driver");
+          p.setUsername("root");
+          p.setPassword("password");
+          p.setJmxEnabled(true);
+          p.setTestWhileIdle(false);
+          p.setTestOnBorrow(true);
+          p.setValidationQuery("SELECT 1");
+          p.setTestOnReturn(false);
+          p.setValidationInterval(30000);
+          p.setTimeBetweenEvictionRunsMillis(30000);
+          p.setMaxActive(100);
+          p.setInitialSize(10);
+          p.setMaxWait(10000);
+          p.setRemoveAbandonedTimeout(60);
+          p.setMinEvictableIdleTimeMillis(30000);
+          p.setMinIdle(10);
+          p.setLogAbandoned(true);
+          p.setRemoveAbandoned(true);
+          p.setJdbcInterceptors(
+            "org.apache.tomcat.jdbc.pool.interceptor.ConnectionState;"+
+            "org.apache.tomcat.jdbc.pool.interceptor.StatementFinalizer");
+          DataSource datasource = new DataSource();
+          datasource.setPoolProperties(p);
+
+          Connection con = null;
+          try {
+            con = datasource.getConnection();
+            Statement st = con.createStatement();
+            ResultSet rs = st.executeQuery("select * from user");
+            int cnt = 1;
+            while (rs.next()) {
+                System.out.println((cnt++)+". Host:" +rs.getString("Host")+
+                  " User:"+rs.getString("User")+" Password:"+rs.getString("Password"));
+            }
+            rs.close();
+            st.close();
+          } finally {
+            if (con!=null) try {con.close();}catch (Exception ignore) {}
+          }
+      }
+
+  }
 
 ```  
 
@@ -265,7 +351,34 @@ JDBC 拦截器是通过 **jdbcInterceptor** 属性来配置的。该属性值包
 
 下例展示了如何为 JNDI 查找配置资源。  
 
-```
+```  
+<Resource name="jdbc/TestDB"
+          auth="Container"
+          type="javax.sql.DataSource"
+          factory="org.apache.tomcat.jdbc.pool.DataSourceFactory"
+          testWhileIdle="true"
+          testOnBorrow="true"
+          testOnReturn="false"
+          validationQuery="SELECT 1"
+          validationInterval="30000"
+          timeBetweenEvictionRunsMillis="30000"
+          maxActive="100"
+          minIdle="10"
+          maxWait="10000"
+          initialSize="10"
+          removeAbandonedTimeout="60"
+          removeAbandoned="true"
+          logAbandoned="true"
+          minEvictableIdleTimeMillis="30000"
+          jmxEnabled="true"
+          jdbcInterceptors="org.apache.tomcat.jdbc.pool.interceptor.ConnectionState;
+            org.apache.tomcat.jdbc.pool.interceptor.StatementFinalizer"
+          username="root"
+          password="password"
+          driverClassName="com.mysql.jdbc.Driver"
+          url="jdbc:mysql://localhost:3306/mysql"/>
+
+
 
 ```  
 
@@ -280,6 +393,20 @@ Tomcat JDBC 连接池支持异步连接获取，无需为池库添加任何额�
 下例就使用了异步获取功能：    
 
 ```
+  Connection con = null;
+  try {
+    Future<Connection> future = datasource.getConnectionAsync();
+    while (!future.isDone()) {
+      System.out.println("Connection is not yet available. Do some background work");
+      try {
+        Thread.sleep(100); //simulate work
+      }catch (InterruptedException x) {
+        Thread.currentThread().interrupt();
+      }
+    }
+    con = future.get(); //should return instantly
+    Statement st = con.createStatement();
+    ResultSet rs = st.executeQuery("select * from user");
 
 ```  
 
@@ -290,8 +417,8 @@ Tomcat JDBC 连接池支持异步连接获取，无需为池库添加任何额�
 拦截器必须扩展自 `org.apache.tomcat.jdbc.pool.JdbcInterceptor` 类。该类相当简单，你必须利用一个无参数构造函数。  
 
 ```
-public JdbcInterceptor() {
-}  
+  public JdbcInterceptor() {
+  }  
 ```  
 
 当从连接池借出一个连接时，拦截器能够通过实现以下方法，初始化这一事件或以一些其他形式来响应该事件。
@@ -307,10 +434,10 @@ public JdbcInterceptor() {
 `Method method` 是被调用的实际方法，`Object[] args` 是参数。通过观察下面这个非常简单的例子，我们可以解释如果当连接已经关闭时，如何让 `java.sql.Connection.close()` 的调用变得无用。   
 
 ```   
-if (CLOSE_VAL==method.getName()) {
-if (isClosed()) return null; //noop for already closed.
-}
-return super.invoke(proxy,method,args);  
+  if (CLOSE_VAL==method.getName()) {
+      if (isClosed()) return null; //noop for already closed.
+  }
+  return super.invoke(proxy,method,args);  
 
 ```
 
@@ -319,11 +446,11 @@ return super.invoke(proxy,method,args);
 当连接池开启或关闭时，你可以得到相关通知。可能每个拦截器类只通知一次，即使它是一个实例方法。也可能使用当前未连接到池中的拦截器来通知你。
 
 ```   
-public void poolStarted(ConnectionPool pool) {
-}
+  public void poolStarted(ConnectionPool pool) {
+  }
 
-public void poolClosed(ConnectionPool pool) {
-}
+  public void poolClosed(ConnectionPool pool) {
+  }
 
 ```  
 
@@ -334,8 +461,8 @@ public void poolClosed(ConnectionPool pool) {
 拦截器可以通过 `jdbcInterceptors` 属性或 `setJdbcInterceptors` 方法来配置。拦截器也可以有属性，可以通过如下方式来配置：   
 
 ```   
-String jdbcInterceptors=
-"org.apache.tomcat.jdbc.pool.interceptor.ConnectionState(useEquals=true,fast=yes)"
+  String jdbcInterceptors=
+    "org.apache.tomcat.jdbc.pool.interceptor.ConnectionState(useEquals=true,fast=yes)"
 
 ```
 
@@ -344,14 +471,14 @@ String jdbcInterceptors=
 既然拦截器也有属性，那么你也可以读取其中的属性值。你可以重写 `setProperties` 方法。   
 
 ```  
-public void setProperties(Map<String, InterceptorProperty> properties) {
-super.setProperties(properties);
-final String myprop = "myprop";
-InterceptorProperty p1 = properties.get(myprop);
-if (p1!=null) {
-setMyprop(Long.parseLong(p1.getValue()));
-}
-}
+  public void setProperties(Map<String, InterceptorProperty> properties) {
+     super.setProperties(properties);
+     final String myprop = "myprop";
+     InterceptorProperty p1 = properties.get(myprop);
+     if (p1!=null) {
+         setMyprop(Long.parseLong(p1.getValue()));
+     }
+  }
 
 ```
 
@@ -360,8 +487,8 @@ setMyprop(Long.parseLong(p1.getValue()));
 连接池围绕实际的连接创建包装器，为的是能够正确地池化。同样，为了执行特定的功能，我们也可以在这些包装器中创建拦截器。如果不需要获取实际的连接，可以使用 `javax.sql.PooledConnection` 接口。   
 
 ```  
-Connection con = datasource.getConnection();
-Connection actual = ((javax.sql.PooledConnection)con).getConnection();
+  Connection con = datasource.getConnection();
+  Connection actual = ((javax.sql.PooledConnection)con).getConnection();
 
 ```  
 
@@ -376,31 +503,27 @@ Connection actual = ((javax.sql.PooledConnection)con).getConnection();
 
 ### 从源代码构建   
 
-构建非常简单。   
+构建非常简单。池依赖于 `tomcat-juli.jar`，在这种情况下，需要 `SlowQueryReportJmx`。   
+
+```    
+  javac -classpath tomcat-juli.jar \
+        -d . \
+        org/apache/tomcat/jdbc/pool/*.java \
+        org/apache/tomcat/jdbc/pool/interceptor/*.java \
+        org/apache/tomcat/jdbc/pool/jmx/*.java
+
+```
 
 构建文件位于 Tomcat 的[源代码仓库](http://svn.apache.org/viewvc/tomcat/trunk/modules/jdbc-pool/)中。  
 
-```  
+为了方便起见，在通过简单构建命令生成所需文件的地方也包含了一个构建文件。     
 
 ```  
+  ant download  (downloads dependencies)
+  ant build     (compiles and generates .jar files)
+  ant dist      (creates a release package)
+  ant test      (runs tests, expects a test database to be setup)
 
+```  
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+系统针对 Maven 构建进行组织，但是没有生成发布组件，只有库本身。

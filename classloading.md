@@ -1,3 +1,13 @@
+
+# 类加载器  
+
+## 目录  
+
+- 概述  
+- 类加载器定义  
+- XML 解析器与 Java  
+- 在安全管理器下运行    
+
 ## 概述     
 
 与很多服务器应用一样，Tomcat 也安装了各种类加载器（那就是实现了 `java.lang.ClassLoader` 的类）。借助类加载器，容器的不同部分以及运行在容器上的 Web 应用就可以访问不同的仓库（保存着可使用的类和资源）。这个机制实现了 Servlet 规范 2.4 版（尤其是 9.4 节和 9.6 节）里所定义的功能。  
@@ -21,25 +31,24 @@
 
 接下来，通过几节内容来详细说明每一个类加载器的特点，其中还将讲解这些加载器可使用的类和资源的来源。    
 
-
-
 ## 类加载器定义    
-
 
 如上图所示，Tomcat 在初始化时会创建如下这些类加载器：   
 
-
-- **Bootstrap** 这种类加载器包含 Java 虚拟机所提供的基本的运行时类，以及在 System Extensions 目录（`$JAVA_HOME/jre/lib/ext`）里的 JAR 文件中所有的类。**注意**：有些 JVM 会把它实现为多个类加载器，或者它根本不可见（作为类加载器）。》》  
+- **Bootstrap** 这种类加载器包含 JVM 所提供的基本的运行时类，以及来自系统扩展目录（`$JAVA_HOME/jre/lib/ext`）里 JAR 文件中的类。**注意**：在有些 JVM 的实现中，它的作用不仅仅是类加载器，或者它可能根本不可见（作为类加载器）。
 
 - **System** 这种类加载器通常是根据 `CLASSPATH` 环境变量内容进行初始化的。所有的这些类对于 Tomcat 内部类以及 Web 应用来说都是可见的。不过，标准的 Tomcat 启动脚本（`$CATALINA_HOME/bin/catalina.sh` 或 `%CATALINA_HOME%\bin\catalina.bat`）完全忽略了 `CLASSPATH` 环境变量自身的内容，相反从下列仓库来构建系统类加载器：
 	- `$CATALINA_HOME/bin/bootstrap.jar` 包含用来初始化 Tomcat 服务器的 `main()` 方法，以及它所依赖的类加载器实现类。  
-	- `$CATALINA_BASE/bin/tomcat-juli.jar` 或 `$CATALINA_HOME/bin/tomcat-juli.jar` 日志实现类。其中包括 `java.util.logging` API 》》   
-	- `$CATALINA_HOME/bin/commons-daemon.jar` [Apache Commons Daemon] 项目的类。该 JAR 文件并不存在于由 `catalina.bat` 或 `catalina.sh` 脚本所创建的 `CLASSPATH` 中，但是引用自》》》 
+	- `$CATALINA_BASE/bin/tomcat-juli.jar` 或 `$CATALINA_HOME/bin/tomcat-juli.jar` 日志实现类。其中包括了对 `java.util.logging` API 的功能增强类（Tomcat JULI），以及对 Tomcat 内部使用的 Apache Commons 日志库的包重命名副本。详情参看 [Tomcat 日志文档](http://tomcat.apache.org/tomcat-8.0-doc/logging.html)。     
+	
+		如果 *$CATALINA_BASE/bin* 中存在 `tomcat-juli.jar`，就不会使用 *$CATALINA_HOME/bin* 中的那一个。它有助于日志的特定配置。   
+	
+	- `$CATALINA_HOME/bin/commons-daemon.jar` [Apache Commons Daemon](http://commons.apache.org/proper/commons-daemon/) 项目的类。该 JAR 文件并不存在于由 `catalina.bat` 或 `catalina.sh` 脚本所创建的 `CLASSPATH` 中，而是引用自 *bootstrap.jar* 的清单文件。   
 	
 
 - **Common** 这种类加载器包含更多的额外类，它们对于Tomcat 内部类以及所有 Web 应用都是可见的。  
 	
-	通常，附加类**不能**放在这里。这种类加载器》》
+	通常，应用类**不会**放在这里。该类加载器所搜索的位置定义在 `$CATALINA_BASE/conf/catalina.properties` 的 `common.loader` 属性中。默认的设置会搜索下列位置（按照列表中的上下顺序）。
 	
 	- `$CATALINA_BASE/lib` 中的解包的类和资源。   
 	- `$CATALINA_BASE/lib` 中的 JAR 文件。  
@@ -62,7 +71,7 @@
 	- *servlet-api.jar* Servlet 3.1 API  
 	- *tomcat-api.jar* Tomcat 定义的一些接口   
 	- *tomcat-coyote.jar* Tomcat 连接器与工具类。    
-	- *tomcat-dbcp.jar* 数据库连接池实现，将 Apache Commons Pool 和 Apache Commons DBCP 中的包重新命名》》   
+	- *tomcat-dbcp.jar* 数据库连接池实现，基于 Apache Commons Pool 的包重命名副本和 Apache Commons DBCP。 
 	- *tomcat-i18n-\*\*.jar* 包含其他语言资源束的可选 JAR。因为默认的资源束也可以包含在每个单独的 JAR 文件中，所以如果不需要国际化信息，可以将其安全地移除。   
 	- *tomcat-jdbc.jar* 一个数据库连接池替代实现，又被称作 Tomcat JDBC 池。详情参看[ JDBC 连接池文档](http://tomcat.apache.org/tomcat-8.0-doc/jdbc-pool.html)。   
 	- *tomcat-util.jar* Apache Tomcat 多种组件所使用的常用类。
@@ -93,18 +102,18 @@
 
 ## XML解析器和 Java    
 
-从 Java 1.4 版起，JRE 就包含了一个 JAXP API 和一个 XML 解析器。》   
+从 Java 1.4 版起，JRE 就包含了一个 JAXP API 的副本和一个 XML 解析器。这对希望使用自己的 XML 解析器的应用产生了一定的影响。
 
-在过去的 Tomcat 中，你只需在 Tomcat 库中简单地换掉 XML 解析器，就能改变所有 Web 应用使用的解析器。但对于现在版本的 Java 而言，这一技术并没有效果，因为通常的类加载器委托过程往往会优先选择 JDK 内部的实现，而 》》》   
+在过去的 Tomcat 中，你只需在 Tomcat 库中简单地换掉 XML 解析器，就能改变所有 Web 应用使用的解析器。但对于现在版本的 Java 而言，这一技术并没有效果，因为通常的类加载器委托进程往往会优先选择 JDK 内部的实现。
 
-Java 支持一种叫做“授权标准覆盖机制”，从而允许在》》 JCP 之外创建的 API的（例如 W3C 的 DOM 和 SAX）。它还可以用于更新 XML 解析器实现。关于此机制的详情，请参看 [http://docs.oracle.com/javase/1.5.0/docs/guide/standards/index.html](http://docs.oracle.com/javase/1.5.0/docs/guide/standards/index.html)。     
+Java 支持一种叫做“授权标准覆盖机制”，从而能够替换在 JCP 之外创建的 API（例如 W3C 的 DOM 和 SAX）。它还可以用于更新 XML 解析器实现。关于此机制的详情，请参看 [http://docs.oracle.com/javase/1.5.0/docs/guide/standards/index.html](http://docs.oracle.com/javase/1.5.0/docs/guide/standards/index.html)。     
 
 为了利用该机制，Tomcat 在启动容器的命令行中包含了系统属性设置 `-Djava.endorsed.dirs=$JAVA_ENDORSED_DIRS`。该选项的默认值为 `$CATALINA_HOME/endorsed`。但要注意，这个 `endorsed` 目录并非默认创建的。    
 
 
-## Running under a security manager    
+## 安全管理器下运行  
 
-当在安全管理器下运行类时，类被允许加载的位置也是基于策略文件中的内容，详情可查看 [Security Manager HOW-TO](http://tomcat.apache.org/tomcat-8.0-doc/security-manager-howto.html)。       
+当在安全管理器下运行时，类被允许加载的位置也是基于策略文件中的内容，详情可查看 [安全管理器文档](http://tomcat.apache.org/tomcat-8.0-doc/security-manager-howto.html)。       
 
 
 

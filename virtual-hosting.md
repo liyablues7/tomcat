@@ -15,7 +15,7 @@
 
 ## 前提设定
 
-针对本教程，假设你有一个开发主机，并有两个主机名：`ren` 和 `stimpy`。再来假设一个 Tomcat 运行实例，`$CATALINA_HOME` 表示它的安装位置，可能是 `/usr/local/tomcat`。   
+针对本教程，假设你有一个开发主机，并有两个主机名：`ren` 和 `stimpy`。再来假设一个 Tomcat 运行实例，`$CATALINA_HOME` 表示它的安装位置，可能是 `/usr/local/tomcat`。     
 
 另外，本教程使用 UNIX 风格的分隔符及命令，如果你使用的是 Windows，则需要相应修改一下。   
 
@@ -24,6 +24,10 @@
 编辑 `server.xml` 文件的 [Engine](http://tomcat.apache.org/tomcat-8.0-doc/config/engine.html) 部分，如下所示：  
 
 ```   
+<Engine name="Catalina" defaultHost="ren">
+    <Host name="ren"    appBase="renapps"/>
+    <Host name="stimpy" appBase="stimpyapps"/>
+</Engine>
 
 ```        
 
@@ -38,6 +42,8 @@
 创建每一个虚拟主机的目录：  
 
 ```   
+mkdir $CATALINA_HOME/renapps
+mkdir $CATALINA_HOME/stimpyapps
 
 ```        
 
@@ -59,6 +65,8 @@
 
 
 ```   
+mkdir $CATALINA_HOME/conf/Catalina/ren
+mkdir $CATALINA_HOME/conf/Catalina/stimpy
 
 ```  
 
@@ -67,13 +75,17 @@
 对于默认的 Web 应用，则按如下方式添加：    
 
 ```  
+$CATALINA_HOME/conf/Catalina/ren/ROOT.xml
+$CATALINA_HOME/conf/Catalina/stimpy/ROOT.xml
 
 ```   
 
 如果想为每个主机都使用 Tomcat Manager 应用，则需要按下列方式来添加它：   
 
 ```    
-
+cd $CATALINA_HOME/conf/Catalina
+cp localhost/manager.xml ren/
+cp localhost/manager.xml stimpy/  
 
 ```
 

@@ -1,4 +1,4 @@
-# 集群与会话复制
+# 集群化与会话复制
 
 ## 重要说明  
 
@@ -42,9 +42,48 @@
 
 下面是默认的集群配置：   
 
-```   
+```     
 
+        <Cluster className="org.apache.catalina.ha.tcp.SimpleTcpCluster"
+                 channelSendOptions="8">
 
+          <Manager className="org.apache.catalina.ha.session.DeltaManager"
+                   expireSessionsOnShutdown="false"
+                   notifyListenersOnReplication="true"/>
+
+          <Channel className="org.apache.catalina.tribes.group.GroupChannel">
+            <Membership className="org.apache.catalina.tribes.membership.McastService"
+                        address="228.0.0.4"
+                        port="45564"
+                        frequency="500"
+                        dropTime="3000"/>
+            <Receiver className="org.apache.catalina.tribes.transport.nio.NioReceiver"
+                      address="auto"
+                      port="4000"
+                      autoBind="100"
+                      selectorTimeout="5000"
+                      maxThreads="6"/>
+
+            <Sender className="org.apache.catalina.tribes.transport.ReplicationTransmitter">
+              <Transport className="org.apache.catalina.tribes.transport.nio.PooledParallelSender"/>
+            </Sender>
+            <Interceptor className="org.apache.catalina.tribes.group.interceptors.TcpFailureDetector"/>
+            <Interceptor className="org.apache.catalina.tribes.group.interceptors.MessageDispatch15Interceptor"/>
+          </Channel>
+
+          <Valve className="org.apache.catalina.ha.tcp.ReplicationValve"
+                 filter=""/>
+          <Valve className="org.apache.catalina.ha.session.JvmRouteBinderValve"/>
+
+          <Deployer className="org.apache.catalina.ha.deploy.FarmWarDeployer"
+                    tempDir="/tmp/war-temp/"
+                    deployDir="/tmp/war-deploy/"
+                    watchDir="/tmp/war-listen/"
+                    watchEnabled="false"/>
+
+          <ClusterListener className="org.apache.catalina.ha.session.ClusterSessionListener"/>
+        </Cluster>  
+        
 ```     
 
 
@@ -136,6 +175,49 @@ JvmRouteBinderValve 将重写会话 id，以便确保下一个请求在故障转
 ## 配置范例  
 
 ```
+        <Cluster className="org.apache.catalina.ha.tcp.SimpleTcpCluster"
+                 channelSendOptions="6">
+
+          <Manager className="org.apache.catalina.ha.session.BackupManager"
+                   expireSessionsOnShutdown="false"
+                   notifyListenersOnReplication="true"
+                   mapSendOptions="6"/>
+          <!--
+          <Manager className="org.apache.catalina.ha.session.DeltaManager"
+                   expireSessionsOnShutdown="false"
+                   notifyListenersOnReplication="true"/>
+          -->
+          <Channel className="org.apache.catalina.tribes.group.GroupChannel">
+            <Membership className="org.apache.catalina.tribes.membership.McastService"
+                        address="228.0.0.4"
+                        port="45564"
+                        frequency="500"
+                        dropTime="3000"/>
+            <Receiver className="org.apache.catalina.tribes.transport.nio.NioReceiver"
+                      address="auto"
+                      port="5000"
+                      selectorTimeout="100"
+                      maxThreads="6"/>
+
+            <Sender className="org.apache.catalina.tribes.transport.ReplicationTransmitter">
+              <Transport className="org.apache.catalina.tribes.transport.nio.PooledParallelSender"/>
+            </Sender>
+            <Interceptor className="org.apache.catalina.tribes.group.interceptors.TcpFailureDetector"/>
+            <Interceptor className="org.apache.catalina.tribes.group.interceptors.MessageDispatch15Interceptor"/>
+            <Interceptor className="org.apache.catalina.tribes.group.interceptors.ThroughputInterceptor"/>
+          </Channel>
+
+          <Valve className="org.apache.catalina.ha.tcp.ReplicationValve"
+                 filter=".*\.gif|.*\.js|.*\.jpeg|.*\.jpg|.*\.png|.*\.htm|.*\.html|.*\.css|.*\.txt"/>
+
+          <Deployer className="org.apache.catalina.ha.deploy.FarmWarDeployer"
+                    tempDir="/tmp/war-temp/"
+                    deployDir="/tmp/war-deploy/"
+                    watchDir="/tmp/war-listen/"
+                    watchEnabled="false"/>
+
+          <ClusterListener className="org.apache.catalina.ha.session.ClusterSessionListener"/>
+        </Cluster>
 
 ```
 
@@ -153,6 +235,15 @@ Cluster 是主要元素，可在该元素内配置所有的集群相关细节。
 更多详细信息请参见[集群配置参考文档](http://tomcat.apache.org/tomcat-8.0-doc/config/cluster.html)。  
 
 ```  
+          <Manager className="org.apache.catalina.ha.session.BackupManager"
+                   expireSessionsOnShutdown="false"
+                   notifyListenersOnReplication="true"
+                   mapSendOptions="6"/>
+          <!--
+          <Manager className="org.apache.catalina.ha.session.DeltaManager"
+                   expireSessionsOnShutdown="false"
+                   notifyListenersOnReplication="true"/>
+          -->
 
 ```  
 
@@ -168,6 +259,11 @@ Channel 元素是 [Tribes](http://tomcat.apache.org/tomcat-8.0-doc/tribes/introd
 详情参见[集群 Channel 文档](http://tomcat.apache.org/tomcat-8.0-doc/config/cluster-channel.html)。  
 
 ```  
+            <Membership className="org.apache.catalina.tribes.membership.McastService"
+                        address="228.0.0.4"
+                        port="45564"
+                        frequency="500"
+                        dropTime="3000"/>
 
 ```
 
@@ -372,7 +468,13 @@ invalidate 调用会被拦截，当一个会话被用户标记失效时，该会
 
 添加下列属性到启动脚本上。
 
-```
+```  
+set CATALINA_OPTS=\
+-Dcom.sun.management.jmxremote \
+-Dcom.sun.management.jmxremote.port=%my.jmx.port% \
+-Dcom.sun.management.jmxremote.ssl=false \
+-Dcom.sun.management.jmxremote.authenticate=false
+
 
 ```  
 
@@ -392,7 +494,7 @@ invalidate 调用会被拦截，当一个会话被用户标记失效时，该会
 
 ## 常见问题解答  
 
-请参看 [FAQ：集群](http://wiki.apache.org/tomcat/FAQ/Clustering)文档。
+请参看 [FAQ：集群](http://wiki.apache.org/tomcat/FAQ/Clustering)文档。  
 
 
 

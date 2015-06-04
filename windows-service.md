@@ -1,6 +1,18 @@
 # 29 Windows 服务  
 
-## 目录  
+## 目录    
+
+- Tomcat 服务应用  
+- Tomcat 监控应用    
+- 命令行实参     
+- 命令行形参  
+- 安装服务  
+- 更新服务  
+- 删除服务   
+- 调试服务  
+- 多个实例  
+        
+ 
 
 ## Tomcat 服务应用  
 
@@ -12,30 +24,29 @@
 
 可用的命令行选项为：  
 
-<table >
-<tr>
-　<td><b>//ES//</b></td>
-　<td>编辑服务配置</td>
-　<td>这是默认操作。如果没有提供其他选项，则调用它。但是可执行未见被重命名为<b>servicenamew.exe。</b></td>
-</tr>
-<tr>
-　<td><b>//MS//</b></td>
-　<td>监控服务</td>
-　<td>将图标放到系统托盘中。</td>
-</tr>
-　
+<table>
+	<tr>
+　		<td><b>//ES//</b></td>
+　		<td>编辑服务配置</td>
+　		<td>这是默认操作。如果没有提供其他选项，则调用它。但是可执行未见被重命名为<b>servicenamew.exe。</b></td>
+	</tr>
+	<tr>
+　		<td><b>//MS//</b></td>
+　		<td>监控服务</td>
+　		<td>将图标放到系统托盘中。</td>
+	</tr>  　
 </table>  
-　
-　
-　
-　
-## 命令行实参    
 
-命令行指令格式为：**//XX//ServiceName**。   
+
+----  
+　
+## 命令行实参       
+
+命令行指令格式为：**//XX//ServiceName**。     
 
 可用的命令行选项为：   
 
-
+  
 <table >
 <tr>
 　<td><b>//TS//</b></td>
@@ -81,7 +92,7 @@
 
 `set PR_CLASSPATH=xx.jar`  
 
-它等同于把以下作为命令行形参的》》：  
+它等同于把以下作为命令行形参：  
 
 `--Classpath=xx.jar`   
 
@@ -130,18 +141,28 @@
 **注意**：在 Windows Vista 或其他版本更新的 Windows 操作系统上，如果开启了用户账户控制功能（UAC，User Account Control），当脚本启动 Tomcat8.exe 时，系统会要求提供额外的特权。如果你想为服务安装程序传入附加选项，如 `PR_*` 环境变量，则必须在系统对它们进行全局配置，或者启动相关程序，利用更高级的特权来设置它们，比如：右键点击 cmd.exe 然后选择 “以管理员身份运行”；在 Windows 8（或更新版本）或 Windows Server 2012（或更新版本）系统中，还可以在文件资源管理器中点击“文件”菜单，为当前目录打开一个高级命令提示符（elevated command prompt）。详情参看[问题 56143](https://bz.apache.org/bugzilla/show_bug.cgi?id=56143)。  
 
 ```  
+Install the service named 'Tomcat8'
+C:\> service.bat install
 
 ```
 
-还有第 2 个参数，可以让你指定服务名，》》  
+还有第 2 个可选参数，可以让你指定服务名，就像 Windows 服务所展示的那样。  
 
 ```  
+Install the service named 'MyService'
+C:\> service.bat install MyService
 
 ```
 
 如果使用 tomcat8.exe，你需要使用 **//IS//** 参数。  
 
 ```  
+Install the service named 'Tomcat8'
+C:\> tomcat8 //IS//Tomcat8 --DisplayName="Apache Tomcat 8" \
+C:\> --Install="C:\Program Files\Tomcat\bin\tomcat8.exe" --Jvm=auto \
+C:\> --StartMode=jvm --StopMode=jvm \
+C:\> --StartClass=org.apache.catalina.startup.Bootstrap --StartParams=start \
+C:\> --StopClass=org.apache.catalina.startup.Bootstrap --StopParams=stop
 
 ```
 
@@ -150,13 +171,19 @@
 要想更新服务参数，需要使用 **//US//** 参数。  
 
 ```  
+Update the service named 'Tomcat8'
+C:\> tomcat8 //US//Tomcat8 --Description="Apache Tomcat Server - http://tomcat.apache.org/ " \
+C:\> --Startup=auto --Classpath=%JAVA_HOME%\lib\tools.jar;%CATALINA_HOME%\bin\bootstrap.jar
 
 ```  
 
 如果想为服务指定可选名，需要以如下方式进行：  
 
 ```
-
+Update the service named 'MyService'
+C:\> tomcat8 //US//MyService --Description="Apache Tomcat Server - http://tomcat.apache.org/ " \
+C:\> --Startup=auto --Classpath=%JAVA_HOME%\lib\tools.jar;%CATALINA_HOME%\bin\bootstrap.jar
+   
 ```
 
 ## 删除服务   
@@ -165,20 +192,36 @@
 如果服务正在运行，则会先停止然后再删除。  
 
 ```   
+Remove the service named 'Tomcat8'
+C:\> tomcat8 //DS//Tomcat8
 
 ```   
 
-为服务指定可选名的方式如下：  
+为服务指定可选名的方式如下：    
+
+```
+Remove the service named 'MyService'
+C:\> tomcat8 //DS//MyService  
+
+```
 
 ## 调试服务  
 
-想要在控制台模式下运行服务，需使用 **//TS//** 参数。   
+想要在控制台模式下运行服务，需使用 **//TS//** 参数。通过按下 CTRL+C or CTRL+BREAK 使服务关闭。如果将 tomcat8.exe 重命名为 testservice.exe，那么只需执行 testservice.exe，就会默认执行这个命令模式了。  
+
+```  
+Run the service named 'Tomcat8' in console mode
+C:\> tomcat8 //TS//Tomcat8 [additional arguments]
+Or simply execute:
+C:\> tomcat8
+
+```  
 
 ## 多个实例  
 
-Tomcat 支持安装多个实例。
+Tomcat 支持安装多个实例。一个 Tomcat 安装可以带有多个实例，它们可以在不同 IP/端口组合上运行，或者是以多个 Tomcat 版本运行，每个版本都一个或多个实例，在不同的不同 IP/端口组合上运行。  
 
-每个实例文件夹都需要具有如下结构：  
+每个实例的文件夹都应具有如下目录结构：  
 
 - conf  
 - logs
@@ -186,7 +229,7 @@ Tomcat 支持安装多个实例。
 - webapps
 - work
 
-》，conf 应该包含 CATALINA_HOME\conf\ 中的下列文件的副本。  》没有复制或编辑的文件，直接从 CATALINA_HOME\conf 
+conf 目录最起码应该包含 CATALINA_HOME\conf\ 中下列文件的副本。任何没有复制过或编辑过的文件，将直接从 CATALINA_HOME\conf 中获取。比如，CATALINA_BASE\conf 中的文件就会覆盖 CATALINA_HOME\conf 的默认文件。
 
 - server.xml  
 - web.xml   
@@ -196,20 +239,25 @@ Tomcat 支持安装多个实例。
 要想安装一个实例，首先将 CATALINA_HOME 环境变量设置为 Tomcat 安装目录名称。然后创建一个第二个环境变量 CATALINA_BASE，并将其指向实例文件夹。最后运行 `service install` 命令指定服务名称。  
 
 ```  
+set CATALINA_HOME=c:\tomcat_8
+set CATALINA_BASE=c:\tomcat_8\instances\instance1
+service install instance1
 
 ```  
 
 修改服务设置，需要运行 **tomcat8w //ES//instance1**。    
 
-对于附加实例，创建附加实例文件夹，更新 CATALINA_BASE 环境变量，然后再次安装服务。  
+对于附加实例，创建附加实例文件夹，更新 `CATALINA_BASE` 环境变量，然后再次安装服务。  
 
 ```
+set CATALINA_BASE=c:\tomcat_8\instances\instance2
+service install instance2
 
 ```  
 
 
 
-
+ 
 
 
 

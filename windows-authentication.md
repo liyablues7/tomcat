@@ -3,21 +3,22 @@
 
 - 概述  
 - 内建 Tomcat 支持  
-1. 域控制器  
-2. Tomcat 实例（Windows 服务器）  
-3. Tomcat 实例（Linux 服务器）  
-4. Web 应用  
-5. 客户端   
-6. 参考资料  
+	1. 域控制器  
+	2. Tomcat 实例（Windows 服务器）  
+	3. Tomcat 实例（Linux 服务器）  
+	4. Web 应用  
+	5. 客户端   
+	6. 参考资料  
 - 第三方库  
-1. Waffle   
-2. Apache httpd  
-3. SourceForge 的 SPNEGO 项目   
-4. Jespa  
+	1. Waffle   
+	2. Apache httpd  
+	3. SourceForge 的 SPNEGO 项目   
+	4. Jespa  
 - 反向代理  
-1. Microsoft IIS  
-2. Apache httpd   
-3. 
+	1. Microsoft IIS  
+	2. Apache httpd   
+
+
 
 ## 概述  
 **集成 Windows 验证**（Integrated Windows authentication）往往用于局域网环境中，因为需要使用服务器执行验证，被验证的用户也必须处于同一域内。为了能够自动验证用户，用户所用的客户端机器也必须处于同一域内。  
@@ -57,13 +58,13 @@
 - 创建一个域用户，它将映射到 Tomcat 服务器所用的服务名称上。在本文档中，用户为 `tc01`，密码为 `tc01pass`。  
 - 将 SPN 映射到用户账户上。SPN 的形式为：`<service class>/<host>:<port>/<service name>`。本文档所用的 SPN 为 `HTTP/win-tc01.dev.local`。要想将用户映射到 SPN 上，运行以下命令：  
 
-`setspn -A HTTP/win-tc01.dev.local tc01`  
-
+	`setspn -A HTTP/win-tc01.dev.local tc01`  
+	
 - 生成 keytab 文件，Tomcat 服务器会用该文件将自身注册到域控制器上。该文件包含用于服务提供者账户的 Tomcat 私钥，所以也应该受到保护。运行以下命令生成该文件（全部命令都应写在同一行中）：  
 
-`ktpass /out c:\tomcat.keytab /mapuser tc01@DEV.LOCAL
-/princ HTTP/win-tc01.dev.local@DEV.LOCAL
-/pass tc01pass /kvno 0`  
+	`ktpass /out c:\tomcat.keytab /mapuser tc01@DEV.LOCAL
+          /princ HTTP/win-tc01.dev.local@DEV.LOCAL
+          /pass tc01pass /kvno 0`  
 
 - 创建客户端所用的域用户。本文档中，域用户为 `test`，密码为 `testpass`。  
 
@@ -76,50 +77,50 @@
 - 将域控制器所创建的 `tomcat.keytab` 文件复制到 `$CATALINA_BASE/conf/tomcat.keytab`。  
 - 创建 kerberos 配置文件 `$CATALINA_BASE/conf/krb5.ini`。本文档使用的文件包含以下内容：  
 
-```  
-[libdefaults]
-default_realm = DEV.LOCAL
-default_keytab_name = FILE:c:\apache-tomcat-8.0.x\conf\tomcat.keytab
-default_tkt_enctypes = rc4-hmac,aes256-cts-hmac-sha1-96,aes128-cts-	hmac-sha1-96
-default_tgs_enctypes = rc4-hmac,aes256-cts-hmac-sha1-96,aes128-cts-	hmac-sha1-96
-forwardable=true
+	```  
+	[libdefaults]
+	default_realm = DEV.LOCAL
+	default_keytab_name = FILE:c:\apache-tomcat-8.0.x\conf\tomcat.keytab
+	default_tkt_enctypes = rc4-hmac,aes256-cts-hmac-sha1-96,aes128-cts-	hmac-sha1-96
+	default_tgs_enctypes = rc4-hmac,aes256-cts-hmac-sha1-96,aes128-cts-	hmac-sha1-96
+	forwardable=true
 
-[realms]
-DEV.LOCAL = {
-kdc = win-dc01.dev.local:88
-}
+	[realms]
+	DEV.LOCAL = {
+   	     kdc = win-dc01.dev.local:88
+	}
 
-[domain_realm]
-dev.local= DEV.LOCAL
-.dev.local= DEV.LOCAL
-```  
-该文件的位置可以通过 `java.security.krb5.conf` 系统属性来修改。
+	[domain_realm]
+	dev.local= DEV.LOCAL
+	.dev.local= DEV.LOCAL
+	```  
+	该文件的位置可以通过 `java.security.krb5.conf` 系统属性来修改。
 - 创建 JAAS 逻辑配置文件 `$CATALINA_BASE/conf/jaas.conf`。本文档使用的文件包含以下内容：  
-
-```    
-com.sun.security.jgss.krb5.initiate {
-com.sun.security.auth.module.Krb5LoginModule required
-doNotPrompt=true
-principal="HTTP/win-tc01.dev.local@DEV.LOCAL"
-useKeyTab=true
-keyTab="c:/apache-tomcat-8.0.x/conf/tomcat.keytab"
-storeKey=true;
+	
+	```    
+	com.sun.security.jgss.krb5.initiate {
+    com.sun.security.auth.module.Krb5LoginModule required
+    doNotPrompt=true
+    principal="HTTP/win-tc01.dev.local@DEV.LOCAL"
+    useKeyTab=true
+    keyTab="c:/apache-tomcat-8.0.x/conf/tomcat.keytab"
+    storeKey=true;
 };
 
-com.sun.security.jgss.krb5.accept {
-com.sun.security.auth.module.Krb5LoginModule required
-doNotPrompt=true
-principal="HTTP/win-tc01.dev.local@DEV.LOCAL"
-useKeyTab=true
-keyTab="c:/apache-tomcat-8.0.x/conf/tomcat.keytab"
-storeKey=true;
-};
+	com.sun.security.jgss.krb5.accept {
+	    com.sun.security.auth.module.Krb5LoginModule required
+	    doNotPrompt=true
+	    principal="HTTP/win-tc01.dev.local@DEV.LOCAL"
+   	 useKeyTab=true
+	    keyTab="c:/apache-tomcat-8.0.x/conf/tomcat.keytab"
+   	 storeKey=true;
+	};
 
-
-```  
-
-本文件位置可以通过 `java.security.auth.login.config` 系统属性来修改。所用的 LoginModule 是 JVM 所专有的，从而能保证所指定的 LoginModule 匹配所用的 JVM。登录配置名称必须与[验证 valve](http://tomcat.apache.org/tomcat-8.0-doc/config/valve.html#SPNEGO_Valve) 所用值相匹配。	  
-
+	
+	```  
+	
+	本文件位置可以通过 `java.security.auth.login.config` 系统属性来修改。所用的 LoginModule 是 JVM 所专有的，从而能保证所指定的 LoginModule 匹配所用的 JVM。登录配置名称必须与[验证 valve](http://tomcat.apache.org/tomcat-8.0-doc/config/valve.html#SPNEGO_Valve) 所用值相匹配。	  
+	
 SPNEGO 验证器适用于任何 Realm，但如果和 JNDI Realm 一起使用的话，JNDI Realm 默认将使用用户的委托凭证（delegated credentials）连接 Active 目录。  
 
 上述步骤测试环境为：Tomcat 服务器运行于 Windows Server 2008 R2 64 位标准版上，带有 Oracle 1.6.0_24 64 位 JDK。  
@@ -146,7 +147,7 @@ SPNEGO 验证器适用于任何 Realm，但如果和 JNDI Realm 一起使用的�
 ### 5. 客户端  
 
 配置客户端，以便使用 Kerberos 认证。对于 IE 浏览器来说，这就需要 Tomcat 实例位于“本地局域网”安全域中，并且需要在“工具 > Internet 选项 > 高级”中启用集成 Windows 认证。注意：客户端和 Tomcat 实例不能使用同一台机器，因为 IE 会使用未经证实的 NTLM 协议。   
-
+ 
 
 ### 6. 参考资料    
 

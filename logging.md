@@ -1,7 +1,13 @@
 ## 目录  
 
 - 简介  
-- 使用 java.util.logging
+	1. java 日志 API——java.util.logging  
+	2. servlets logging API   
+	3. Console    
+	4. Acces 日志    
+- 使用 java.util.logging  
+	1. 文档引用     
+	2. 生产环境使用中的注意事项      
 - 使用 Log4j  
 
 
@@ -9,7 +15,7 @@
 
 Tomcat 的内部日志 使用 JULI 组件，这是一个 [Apache Commons 日志](http://commons.apache.org/proper/commons-logging/)的重命名的打包分支，默认被硬编码，使用 `java.util.logging` 架构。这能保证 Tomcat 内部日志与 Web 应用的日志保持独立，即使 Web 应用使用的是 Apache Commons Logging。   
 
-假如想用另外的日志框架来替换 Tomcat 的内部日志系统，那么就必须采用一种能够保持完整的 Commons 日志机制的 JULI 实现，用它来替换通过硬编码使用 `java.util.logging` 的 JULI 实现。通常这种替代实现都是以[额外组件](http://tomcat.apache.org/tomcat-8.0-doc/extras.html》替换中文页面》)的形式出现的。利用 Log4j 框架用于 Tomcat 内部日志的配置<a href = "#usingLog4j">如下文所示</a>。   
+假如想用另外的日志框架来替换 Tomcat 的内部日志系统，那么就必须采用一种能够保持完整的 Commons 日志机制的 JULI 实现，用它来替换通过硬编码使用 `java.util.logging` 的 JULI 实现。通常这种替代实现都是以[额外组件](http://tomcat.apache.org/tomcat-8.0-doc/extras.html替换中文页面》)的形式出现的。利用 Log4j 框架用于 Tomcat 内部日志的配置<a href = "#usingLog4j">如下文所示</a>。   
 
 在 Apache Tomcat 上运行的 Web 应用可以使用：  
 
@@ -17,12 +23,12 @@ Tomcat 的内部日志 使用 JULI 组件，这是一个 [Apache Commons 日志]
 - 系统日志 API，`java.util.logging`。  
 -  Java Servlets 规范所提供的日志 API，`javax.servlet.ServletContext.log(...)`。  
 
-各个应用可以使用不同的日志框架，详情参见[类加载器](》换中文页面》)。`java.util.logging` 则是例外。如果日志库直接或间接地用到了这一 API，那么 Web 应用就能共享使用它的元素，因为该 API 是由系统类加载器所加载的。  
+各个应用可以使用不同的日志框架，详情参见[类加载器](换中文页面》)。`java.util.logging` 则是例外。如果日志库直接或间接地用到了这一 API，那么 Web 应用就能共享使用它的元素，因为该 API 是由系统类加载器所加载的。  
 
-
+  
 
 ### 1. java 日志 API——java.util.logging  
-
+ 
 Apache Tomcat 本身已经实现了 `java.util.logging` API 的几个关键元素。这种实现就是 JULI。其中的关键组件是一个自定义的 LogManager 实现，它能分辨运行在 Tomcat 上的不同 Web 应用（以及它们所用的不同的类加载器），还能针对每一应用进行私有的日志配置。另外，当 Web 应用没能从内存中加载时，Tomcat 会给予它相应通知，从而清除相应的引用类，防止内存泄露。  
 
 在启动 Java 时，通过提供特定的系统属性，可以启用 `java.util.logging` 实现。Apache Tomcat 启动脚本可以实现这个操作，但如果使用不同工具来运行 Tomcat（比如 jsvc，或者从某个 IDE 中运行 Tomcat），就必须自己来启用实现。  
@@ -103,6 +109,51 @@ JULI 所使用的配置与纯 `java.util.logging` 所支持的配置基本相同
 以下是一个 `$CATALINA_BASE/conf` 中的 `logging.properties` 文件：  
 
 ```   
+handlers = 1catalina.org.apache.juli.FileHandler, \
+           2localhost.org.apache.juli.FileHandler, \
+           3manager.org.apache.juli.FileHandler, \
+           java.util.logging.ConsoleHandler
+
+.handlers = 1catalina.org.apache.juli.FileHandler, java.util.logging.ConsoleHandler
+
+############################################################
+# Handler specific properties.
+# Describes specific configuration info for Handlers.
+############################################################
+
+1catalina.org.apache.juli.FileHandler.level = FINE
+1catalina.org.apache.juli.FileHandler.directory = ${catalina.base}/logs
+1catalina.org.apache.juli.FileHandler.prefix = catalina.
+
+2localhost.org.apache.juli.FileHandler.level = FINE
+2localhost.org.apache.juli.FileHandler.directory = ${catalina.base}/logs
+2localhost.org.apache.juli.FileHandler.prefix = localhost.
+
+3manager.org.apache.juli.FileHandler.level = FINE
+3manager.org.apache.juli.FileHandler.directory = ${catalina.base}/logs
+3manager.org.apache.juli.FileHandler.prefix = manager.
+3manager.org.apache.juli.FileHandler.bufferSize = 16384
+
+java.util.logging.ConsoleHandler.level = FINE
+java.util.logging.ConsoleHandler.formatter = java.util.logging.SimpleFormatter
+
+
+############################################################
+# Facility specific properties.
+# Provides extra control for each logger.
+############################################################
+
+org.apache.catalina.core.ContainerBase.[Catalina].[localhost].level = INFO
+org.apache.catalina.core.ContainerBase.[Catalina].[localhost].handlers = \
+   2localhost.org.apache.juli.FileHandler
+
+org.apache.catalina.core.ContainerBase.[Catalina].[localhost].[/manager].level = INFO
+org.apache.catalina.core.ContainerBase.[Catalina].[localhost].[/manager].handlers = \
+   3manager.org.apache.juli.FileHandler
+
+# For example, set the org.apache.catalina.util.LifecycleBase logger to log
+# each component that extends LifecycleBase changing state:
+#org.apache.catalina.util.LifecycleBase.level = FINE
 
 ```  
 
@@ -110,6 +161,19 @@ JULI 所使用的配置与纯 `java.util.logging` 所支持的配置基本相同
 下例是一个用于 servlet-examples 应用的 `WEB-INF/classes` 中的 `logging.properties` 文件：      
 
 ```  
+handlers = org.apache.juli.FileHandler, java.util.logging.ConsoleHandler
+
+############################################################
+# Handler specific properties.
+# Describes specific configuration info for Handlers.
+############################################################
+
+org.apache.juli.FileHandler.level = FINE
+org.apache.juli.FileHandler.directory = ${catalina.base}/logs
+org.apache.juli.FileHandler.prefix = ${classloader.webappName}.
+
+java.util.logging.ConsoleHandler.level = FINE
+java.util.logging.ConsoleHandler.formatter = java.util.logging.SimpleFormatter
 
 ```  
 
@@ -140,29 +204,77 @@ JULI 所使用的配置与纯 `java.util.logging` 所支持的配置基本相同
 
 1. 创建一个包含下列配置的 `log4j.properties` 文件，将其保存到 `$CATALINA_BASE/lib`。  
 
-```  
+	```
+	log4j.rootLogger = INFO, CATALINA
 
-```  
+	# Define all the appenders
+	log4j.appender.CATALINA = org.apache.log4j.DailyRollingFileAppender
+	log4j.appender.CATALINA.File = ${catalina.base}/logs/catalina
+	log4j.appender.CATALINA.Append = true
+	log4j.appender.CATALINA.Encoding = UTF-8
+	# Roll-over the log once per day
+	log4j.appender.CATALINA.DatePattern = '.'yyyy-MM-dd'.log'
+	log4j.appender.CATALINA.layout = org.apache.log4j.PatternLayout
+	log4j.appender.CATALINA.layout.ConversionPattern = %d [%t] %-5p %c- %m%n
+	
+	log4j.appender.LOCALHOST = org.apache.log4j.DailyRollingFileAppender
+	log4j.appender.LOCALHOST.File = ${catalina.base}/logs/localhost
+	log4j.appender.LOCALHOST.Append = true
+	log4j.appender.LOCALHOST.Encoding = UTF-8
+	log4j.appender.LOCALHOST.DatePattern = '.'yyyy-MM-dd'.log'
+	log4j.appender.LOCALHOST.layout = org.apache.log4j.PatternLayout
+	log4j.appender.LOCALHOST.layout.ConversionPattern = %d [%t] %-5p %c- %m%n
+	
+	log4j.appender.MANAGER = org.apache.log4j.DailyRollingFileAppender
+	log4j.appender.MANAGER.File = ${catalina.base}/logs/manager
+	log4j.appender.MANAGER.Append = true
+	log4j.appender.MANAGER.Encoding = UTF-8
+	log4j.appender.MANAGER.DatePattern = '.'yyyy-MM-dd'.log'
+	log4j.appender.MANAGER.layout = org.apache.log4j.PatternLayout
+	log4j.appender.MANAGER.layout.ConversionPattern = %d [%t] %-5p %c- %m%n
+	
+	log4j.appender.HOST-MANAGER = org.apache.log4j.DailyRollingFileAppender
+	log4j.appender.HOST-MANAGER.File = ${catalina.base}/logs/host-manager
+	log4j.appender.HOST-MANAGER.Append = true
+	log4j.appender.HOST-MANAGER.Encoding = UTF-8
+	log4j.appender.HOST-MANAGER.DatePattern = '.'yyyy-MM-dd'.log'
+	log4j.appender.HOST-MANAGER.layout = org.apache.log4j.PatternLayout
+	log4j.appender.HOST-MANAGER.layout.ConversionPattern = %d [%t] %-5p %c- %m%n
+	
+	log4j.appender.CONSOLE = org.apache.log4j.ConsoleAppender
+	log4j.appender.CONSOLE.Encoding = UTF-8
+	log4j.appender.CONSOLE.layout = org.apache.log4j.PatternLayout
+	log4j.appender.CONSOLE.layout.ConversionPattern = %d [%t] %-5p %c- %m%n
+	
+	# Configure which loggers log to which appenders
+	log4j.logger.org.apache.catalina.core.ContainerBase.[Catalina].[localhost] = INFO, LOCALHOST
+	log4j.logger.org.apache.catalina.core.ContainerBase.[Catalina].[localhost].[/manager] =\
+  INFO, MANAGER
+	log4j.logger.org.apache.catalina.core.ContainerBase.[Catalina].[localhost].[/host-manager] =\
+  INFO, HOST-MANAGER
+
+	```  
+
 
 2. 下载 [log4j](http://logging.apache.org/log4j/2.x/)(Tomcat 需要 1.2.x 版本)。  
 3. 下载或构建 `tomcat-juli.jar` 和 `tomcat-juli-adapters.jar`，以便作为 Tomcat 的额外组件使用。详情参考 [Additional Components documentation](http://tomcat.apache.org/tomcat-8.0-doc/extras.html)。     
 
-`tomcat-juli.jar` 跟默认的版本不同。它包含所有的 Commons Logging 实现，从而能够发现 log4j 并配置自身。  
-
+	`tomcat-juli.jar` 跟默认的版本不同。它包含所有的 Commons Logging 实现，从而能够发现 log4j 并配置自身。  
+	
 4. 如果希望全局性地使用 log4j，则如下配置 Tomcat：  
-- 将 `log4j.jar` 和 `tomcat-juli-adapters.jar` 从 extras 中放入 `$CATALINA_HOME/lib` 中。  
-- 用 extras 中的 `tomcat-juli.jar` 替换 `$CATALINA_HOME/bin/tomcat-juli.jar`。   
+	- 将 `log4j.jar` 和 `tomcat-juli-adapters.jar` 从 extras 中放入 `$CATALINA_HOME/lib` 中。  
+	- 用 extras 中的 `tomcat-juli.jar` 替换 `$CATALINA_HOME/bin/tomcat-juli.jar`。   
 
 5. 如果是利用独立的 `$CATALINA_HOME` 和 `$CATALINA_BASE` 来运行 Tomcat，并想在一个 `$CATALINA_BASE` 中配置使用 log4j，则需要：  
-- 创建 `$CATALINA_BASE/bin` 和 `$CATALINA_BASE/lib` 目录——如果它们不存在的话。  
-- 将 extras 中的 `log4j.jar` 与 `tomcat-juli-adapters.jar` 从 extras 放入 `$CATALINA_BASE/lib` 中。  
-- 将 extras 中的 `tomcat-juli.jar` 转换成 `$CATALINA_BASE/bin/tomcat-juli.jar`。  
-- 如果使用[安全管理器](http://tomcat.apache.org/tomcat-8.0-doc/security-manager-howto.html)运行，则需要编辑 `$CATALINA_BASE/conf/catalina.policy` 文件来修改它，以便使用不同版本的 `tomcat-juli.jar`。  
-
-**注意**：其中的工作原理在于：优先将库加载到	 `$CATALINA_HOME` 中同样的库中。  
-
-**注意**：`tomcat-juli.jar` 之所以从 `$CATALINA_BASE`/bin 加载（而不是从 `$CATALINA_BASE`/lib 加载），是因为它是用作引导进程的，而引导类都是从 bin 加载的。  
-
+	- 创建 `$CATALINA_BASE/bin` 和 `$CATALINA_BASE/lib` 目录——如果它们不存在的话。  
+	- 将 extras 中的 `log4j.jar` 与 `tomcat-juli-adapters.jar` 从 extras 放入 `$CATALINA_BASE/lib` 中。  
+	- 将 extras 中的 `tomcat-juli.jar` 转换成 `$CATALINA_BASE/bin/tomcat-juli.jar`。  
+	- 如果使用[安全管理器](http://tomcat.apache.org/tomcat-8.0-doc/security-manager-howto.html)运行，则需要编辑 `$CATALINA_BASE/conf/catalina.policy` 文件来修改它，以便使用不同版本的 `tomcat-juli.jar`。  
+	
+	**注意**：其中的工作原理在于：优先将库加载到	 `$CATALINA_HOME` 中同样的库中。  
+	
+	**注意**：`tomcat-juli.jar` 之所以从 `$CATALINA_BASE`/bin 加载（而不是从 `$CATALINA_BASE`/lib 加载），是因为它是用作引导进程的，而引导类都是从 bin 加载的。  
+	
 6. 删除 `$CATALINA_BASE/conf/logging.properties`，以防止 `java.util.logging` 生成零长度的日志文件。  
 7. 启动 Tomcat。  
 
@@ -184,9 +296,9 @@ log4j.logger.org.apache.catalina.session=DEBUG
 
 **额外注意**：   
 
-- 通过 Commons 类加载器将 log4j 库暴露给 Web 应用。详见[类加载器](》替换中文页面》)文档。  
-正是由于这一点，使用 [Apache Commons Logging] 库的 Web 应用和库有可能自动会将 log4j 选为底层日志实现。  
-- `java.util.logging` API 仍适用于直接使用它的 Web 应用。`${catalina.base}/conf/logging.properties` 文件仍然可被 Tomcat 启动脚本所引用。详情可查看<a href = "#introduction"本页的简介部分</a>。   
-
-如前面相关步骤所述，删除了 `${catalina.base}/conf/logging.properties` 文件，会导致 `java.util.logging` 回退到 JRE 默认的配置，从而使用 ConsoleHandler，然而却不创建任何标准日志文件。所以必须确保：在禁止标准机制之前，所有的日志文件必须是由 log4j 创建的。    
+- 通过 Commons 类加载器将 log4j 库暴露给 Web 应用。详见[类加载器](》替换中文页面)文档。  
+	正是由于这一点，使用 [Apache Commons Logging] 库的 Web 应用和库有可能自动会将 log4j 选为底层日志实现。  
+- `java.util.logging` API 仍适用于直接使用它的 Web 应用。`${catalina.base}/conf/logging.properties` 文件仍然可被 Tomcat 启动脚本所引用。详情可查看<a href = "#introduction">本页的简介部分</a>。   
+	
+	如前面相关步骤所述，删除了 `${catalina.base}/conf/logging.properties` 文件，会导致 `java.util.logging` 回退到 JRE 默认的配置，从而使用 ConsoleHandler，然而却不创建任何标准日志文件。所以必须确保：在禁止标准机制之前，所有的日志文件必须是由 log4j 创建的。    
 - **Access Log Valve** 和 ** ExtendedAccessLogValve** 使用它们自包含的日志实现，所以无法配置使用 log4j，详情参看 [Valves](http://tomcat.apache.org/tomcat-8.0-doc/config/valve.html#Access_Logging)。   

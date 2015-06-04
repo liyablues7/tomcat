@@ -1,23 +1,30 @@
-# Jasper 2 JSP Engine 
+# Jasper 2 JSP 引擎 
 
 ## 目录 
 
--  
-## 简介  
+- <a href = "#Introduction">简介</a>  
+- <a href = "#Configuration">配置</a>  
+- <a href = "#Knownissues">已知问题</a>  
+- <a href = "#ProductionConfiguration">产品配置</a>  
+- <a href = "#WebApplicationCompilation">Web 应用编译</a>  
+- <a href = "#Optimisation">优化</a>  
 
-Tomcat 8.0 使用 Jasper 2 JSP 引擎去实现 [JavaServer Pages 2.3](http://wiki.apache.org/tomcat/Specifications) 规范。    
 
-Jasper 2 经过了重新设计，极大改善了上一版 Jasper 的性能。除了》》，还做出了以下改变：   
+## <a name = "Introduction">简介</a>  
 
-- **JSP Custom Tag Pooling** JSP 自定义标签（JSP Custom Tags）》。这极大提高了使用自定义标签的 JSP 页面的性能。   
-- **Background JSP compilation** 如果你更改了一个已经编译的 JSP 页面，Jasper 2 会在后台重新编译该页面。之前编译的 JSP 页面将依然能够服务请求。一旦新页面编译成功，它就会自动代替旧页面。这能提高生产服务器上的 JSP 页面的可用性。   
-- **Recompile JSP when included page changes** Jasper 2 现在能够侦测页面何时出现改动，然后重新编译父 JSP。  
-- **JDT used to compile JSP pages** Eclipse JDT Java 编译器现在能用来编译 JSP java 源代码。该编译器从容器类加载器加载源代码支持。Ant 与 javac 依旧能够使用。   
+Tomcat 8.0 使用 Jasper 2 JSP 引擎去实现 [JavaServer Pages 2.3 规范](http://wiki.apache.org/tomcat/Specifications)。    
+
+Jasper 2 经过了重新设计，极大改善了上一版 Jasper 的性能。除了一般性的代码改进之外，还做出了以下改变：   
+
+- **JSP 自定义标签池化** 针对 JSP 自定义标签（JSP Custom Tags）实例化的 Java 对象现已可以被池化和重用，从而极大提高了使用自定义标签的 JSP 页面的性能。   
+- **JSP 后台编译** 如果你更改了一个已经编译的 JSP 页面，Jasper 2 会在后台重新编译该页面。之前编译的 JSP 页面将依然能够服务请求。一旦新页面编译成功，它就会自动代替旧页面。这能提高生产服务器上的 JSP 页面的可用性。   
+- **能够重新编译发生改动的 JSP 页面** Jasper 2 现在能够侦测页面何时出现改动，然后重新编译父 JSP。  
+- **用于编译 JSP 页面的 JDT 编译器** Eclipse JDT Java 编译器现在能用来编译 JSP java 源代码。该编译器从容器类加载器加载源代码支持。Ant 与 javac 依旧能够使用。   
 
 Jasper 可以使用 servlet 类 `org.apache.jasper.servlet.JspServlet`。    
 
 
-## 配置    
+## <a name = "Configuration">配置</a>    
 
 Jasper 默认就是用于开发 Web 应用的。关于如何在 Tomcat 生产服务器中配置并使用 Jasper，可参考[生产环境配置](http://tomcat.apache.org/tomcat-8.0-doc/jasper-howto.html#Production_Configuration)一节内容。  
 
@@ -67,11 +74,11 @@ Jasper 默认就是用于开发 Web 应用的。关于如何在 Tomcat 生产服
 
 - **recompileOnFail**  如果 JSP 编译失败，是否应该忽略 `modificationTestInterval`，下一次访问是否触发重新编译的尝试？只用在开发模式下，并且默认是禁止的，因为编译会使用大量的资源，是极其昂贵的过程。   
 
-- **scratchdir** 编译 JSP 页面时应该使用哪个 scratch 目录？》》默认为当前 Web 应用的工作目录。   
+- **scratchdir** 编译 JSP 页面时应该使用的临时目录（scratch directory）。默认为当前 Web 应用的工作目录。   
 
-- **suppressSmap** 用于 JSR45 调试的 SMAP 信息是否应该被抑制？》》
+- **suppressSmap** 是否禁止 JSR45 调试时生成的 SMAP 信息？`true` 或 `false`，缺省为 `false`。
 
-- **trimSpaces** 是否应清除 actions 与 directives》之间的模板文本中的空格？默认为 `false`。  
+- **trimSpaces** 是否应清除模板文本中行为与指令之间的的空格？默认为 `false`。  
 
 - **xpoweredBy**  是否通过生成的 servlet 添加 X-Powered-By 响应头？布尔值，默认为 `false`。   
 
@@ -82,37 +89,114 @@ Eclipse JDT 的 Java 编译器被指定为默认的编译器。它非常先进�
 
 
 
-## 已知问题    
+## <a name = "Knownissues">已知问题</a>      
 
 [bug 39089]()报告指出，在编译非常大的 JSP 时，已知的 JVM 问题 [bug 6294277]() 可能会导致出现 `java.lang.InternalError: name is too long to represent` 异常。如果出现这一问题，可以采用下列办法来解决：   
 
 - 减少 JSP 大小。  
-- 将 `suppressSmap` 设为 `true`，禁用 SMAP generation 》》与 JSR-045 支持。   
+- 将 `suppressSmap` 设为 `true`，禁止生成 SMAP 信息与 JSR-045 支持。   
 
 
-## 生产配置    
+## <a name = "ProductionConfiguration">生产配置</a>    
 
 能做的最重要的 JSP 优化就是对 JSP 进行预编译。但这通常不太可能（比如说，使用jsp-property-group 功能时）或者说不太实际，这种情况下，如何配置Jasper Servlet 就变得很关键了。  
 
 在生产级 Tomcat 服务器上使用 Jasper 2 时，应该考虑将默认配置进行如下这番修改：   
 
-- **development**   
-- **genStringAsCharArray**  
-- **modificationTestInterval**  
-- **trimSpaces**  
+- **development** 针对 JSP 页面编译，禁用访问检查，可以将其设为 `false`。 
+- **genStringAsCharArray** 设定为 `true` 可以生成稍微更有效率的字符串数组。
+- **modificationTestInterval**  如果由于某种原因（如动态生成 JSP 页面），必须将 `development` 设为 `true`，提高该值将大幅改善性能。
+- **trimSpaces** 设为 `true` 可以去除响应中的无用字节。  
 
 
 
-## Web 应用编译    
+## <a name = "WebApplicationCompilation">Web 应用编译</a>    
 
-
+使用 Ant 是利用 JSPC 编译 Web 应用的首选方式。注意在预编译 JSP 页面时，如果 `suppressSmap` 为 `false`，而 `compile` 为 true，则 SMAP 信息只能包含在最后的类中。使用下面的脚本来预编译 Web 应用（在 deployer 下载中也包含类似的脚本）。
 
 
 
 ```
+<project name="Webapp Precompilation" default="all" basedir=".">
 
-```
+   <import file="${tomcat.home}/bin/catalina-tasks.xml"/>
+
+   <target name="jspc">
+
+    <jasper
+             validateXml="false"
+             uriroot="${webapp.path}"
+             webXmlFragment="${webapp.path}/WEB-INF/generated_web.xml"
+             outputDir="${webapp.path}/WEB-INF/src" />
+
+  </target>
+
+  <target name="compile">
+
+    <mkdir dir="${webapp.path}/WEB-INF/classes"/>
+    <mkdir dir="${webapp.path}/WEB-INF/lib"/>
+
+    <javac destdir="${webapp.path}/WEB-INF/classes"
+           optimize="off"
+           debug="on" failonerror="false"
+           srcdir="${webapp.path}/WEB-INF/src"
+           excludes="**/*.smap">
+      <classpath>
+        <pathelement location="${webapp.path}/WEB-INF/classes"/>
+        <fileset dir="${webapp.path}/WEB-INF/lib">
+          <include name="*.jar"/>
+        </fileset>
+        <pathelement location="${tomcat.home}/lib"/>
+        <fileset dir="${tomcat.home}/lib">
+          <include name="*.jar"/>
+        </fileset>
+        <fileset dir="${tomcat.home}/bin">
+          <include name="*.jar"/>
+        </fileset>
+      </classpath>
+      <include name="**" />
+      <exclude name="tags/**" />
+    </javac>
+
+  </target>
+
+  <target name="all" depends="jspc,compile">
+  </target>
+
+  <target name="cleanup">
+    <delete>
+        <fileset dir="${webapp.path}/WEB-INF/src"/>
+        <fileset dir="${webapp.path}/WEB-INF/classes/org/apache/jsp"/>
+    </delete>
+  </target>
+
+</project>
+
+```  
+
+
+下面的代码可以用来运行该脚本（利用 Tomcat 基本路径与指向应被预编译 Web 应用的路径来取代令牌）  
+
+`$ANT_HOME/bin/ant -Dtomcat.home=<$TOMCAT_HOME> -Dwebapp.path=<$WEBAPP_PATH>`  
+
+然后，必须在 Web 应用部署描述符文件中添加预编译过程中生成的 servlet 的声明与映射。将 `${webapp.path}/WEB-INF/generated_web.xml` 插入 `${webapp.path}/WEB-INF/web.xml` 文件中合适的位置。使用 Manager 重启 Web 应用，测试应用，以便验证应用能正常使用预编译 servlet。利用Web 应用部署描述符文件中的一个适当的令牌，也能使用 Ant 过滤功能自动插入生成的 servlet 声明与映射。这实际上就是 Tomcat 所分配的所有 Web 应用能作为构建进程中的一部分而自动编译的原理。    
+
+在 Jasper 任务中，还可以使用选项 `addWebXmlMappings`，它可以将 `${webapp.path}/WEB-INF/web.xml` 中的当前 Web 应用部署描述符文件自动与 `${webapp.path}/WEB-INF/generated_web.xml` 进行合并。当你想在 JSP 页面中使用 Java 6 功能时，添加下列 javac 编译器任务属性：`source="1.6" target="1.6"`。对于动态应用而言，还可以使用 `optimize="on"` 进行编译，注意，不用带调试信息：`debug="off"`。   
+
+当首次出现 jsp 语法错误时，假如你不想停止 jsp 生成，可以使用 `failOnError="false"` 和 `showSuccess="true"`，将所有成功生成的 *jsp to java* 打印出来。这种做法有时非常有用，比如当你想要在 `${webapp.path}/WEB-INF/src` 中清除生成的 java 源文件以及 `${webapp.path}/WEB-INF/classes/org/apache/jsp` 中的编译 jsp 的 servlet 类时。  
+
+**提示**：  
+
+- 当你换用另一版本的 Tomcat 时，需要重新生成和编译 JSP 页面。  
+- 在服务器运行时使用 Java 系统属性，通过设定 `org.apache.jasper.runtime.JspFactoryImpl.USE_POOL=false` 禁用 PageContext 池化，利用 `org.apache.jasper.runtime.BodyContentImpl.LIMIT_BUFFER=true` 限制缓存。注意，改变默认值可能会影响性能，但这种情况跟具体的应用有关。  
+
+## <a name = "Optimisation">优化</a>      
+
+Jasper 还提供了很多扩展点，能让用户针对具体的环境而优化行为。  
+
+标签插件机制就是首先要谈到的一个扩展点。对于提供给 Web 应用使用的标签处理器而言，它能提供多种替代实现。标签插件 通过位于 `WEB-INF` 的 `tagPlugins.xml` 进行注册。Jasper 本身还包含了一个 JSTL 的范例插件。  
+
+表达式语言（EL，Expression Language）解释器则是另外一个扩展点。通过 `ServletContext` 可以配置替代的 EL 解释器。可以参看 ELInterpreterFactory Java 文档来了解如何配置替代的 EL 解释器。   
 
 
 
-## 优化  

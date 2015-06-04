@@ -1,4 +1,5 @@
-# JNDI 资源
+# 8. JNDI 资源
+
 
 ## 目录  
 - 本章概述  
@@ -29,12 +30,12 @@ Tomcat 为每个在其上运行的 Web 应用都提供了一个 JNDI 的 `Initia
 可在 Web 应用的部署描述符文件（`/WEB-INF/web.xml`）中使用下列元素来定义资源：     
 
 - `<env-entry>` 应用的环境项。一个可用于配置应用运行方式的单值参数。  
-- `<resource-ref>` 资源引用，通常是引用某个对象工厂中》for 的译法》类似 JDBC `DataSource` 或 JavaMail `Session` 这样的资源；或者引用配置在 Tomcat 中的自定义对象工厂中的资源。     
+- `<resource-ref>` 资源引用，通常是引用保存某种资源的对象工厂，比如 JDBC `DataSource` 或 JavaMail `Session` 这样的资源；或者引用配置在 Tomcat 中的自定义对象工厂中的资源。     
 - `<resource-env-ref>` 资源环境引用。Servlet 2.4 所添加的一种新 `resource-ref`，它简化了不需要认证消息的资源的配置。     
 
 有了这些，Tomcat就能利用适宜的资源工厂来创建资源，再也不需要其他配置信息了。Tomcat 将使用 `/WEB-INF/web.xml` 中的信息来创建资源。  
 
-另外，Tomcat 还提供了一些用于 JNDI 的特殊选项，不能在 web.xml 中指定。比如，其中包括的 `closeMethod` 能在 Web 应用停止时，迅速清除 JNDI 资源；`singleton` 控制是否会在每次 JNDI 》》查找时创建资源的新实例。要想使用这些配置选项，资源必须指定在 Web 应用的 [`<Context>`](http://tomcat.apache.org/tomcat-8.0-doc/config/context.html) 元素内，或者位于 `$CATALINA_BASE/conf/server.xml` 的 [`<GlobalNamingResources>`](http://tomcat.apache.org/tomcat-8.0-doc/config/globalresources.html) 元素中。
+另外，Tomcat 还提供了一些用于 JNDI 的特殊选项，它们没有指定在 web.xml 中。比如，其中包括的 `closeMethod` 能在 Web 应用停止时，迅速清除 JNDI 资源；`singleton` 控制是否会在每次 JNDI 查找时创建资源的新实例。要想使用这些配置选项，资源必须指定在 Web 应用的 [`<Context>`](http://tomcat.apache.org/tomcat-8.0-doc/config/context.html) 元素内，或者位于 `$CATALINA_BASE/conf/server.xml` 的 [`<GlobalNamingResources>`](http://tomcat.apache.org/tomcat-8.0-doc/config/globalresources.html) 元素中。
 
 
 
@@ -45,11 +46,11 @@ Tomcat 为每个在其上运行的 Web 应用都提供了一个 JNDI 的 `Initia
 
 要想完成 Tomcat 的特定资源配置，需要使用 `<Context>` 元素中的下列元素：  
 
-- [`<Environment>`](http://tomcat.apache.org/tomcat-8.0-doc/config/context.html#Environment_Entries) 》》（等同于 Web 应用部署描述符文件中 `<env-entry>` 元素中的配置）。  
+- [`<Environment>`](http://tomcat.apache.org/tomcat-8.0-doc/config/context.html#Environment_Entries) 对将通过 JNDI 的 `InitialContext` 方法暴露给 Web 应用的环境项的名称与数值加以配置（等同于 Web 应用部署描述符文件中包含了一个 `<env-entry>` 元素）。  
   
-- [`<Resource>`](http://tomcat.apache.org/tomcat-8.0-doc/config/context.html#Resource_Definitions) 定义应用所能用到的资源名称和数据类型（等同于 Web 应用部署描述符文件中 `<resource-ref>` 元素中的配置）。  
+- [`<Resource>`](http://tomcat.apache.org/tomcat-8.0-doc/config/context.html#Resource_Definitions) 定义应用所能用到的资源名称和数据类型（等同于 Web 应用部署描述符文件中包含了一个 `<resource-ref>` 元素）。  
 
-- [`<ResourceLink>`](http://tomcat.apache.org/tomcat-8.0-doc/config/context.html#Resource_Links) 添加一个链接，指向全局 JNDI 上下文中定义的资源。使用资源链接可以使 Web 应用访问定义在 [`<Server>`](http://tomcat.apache.org/tomcat-8.0-doc/config/server.html) 元素中子元素 [`<GlobalNamingResources>`](http://tomcat.apache.org/tomcat-8.0-doc/config/globalresources.html) 中的资源。  
+- [`<ResourceLink>`](http://tomcat.apache.org/tomcat-8.0-doc/config/context.html#Resource_Links) 添加一个链接，使其指向全局 JNDI 上下文中定义的资源。使用资源链接可以使 Web 应用访问定义在 [`<Server>`](http://tomcat.apache.org/tomcat-8.0-doc/config/server.html) 元素中子元素 [`<GlobalNamingResources>`](http://tomcat.apache.org/tomcat-8.0-doc/config/globalresources.html) 中的资源。  
 
 - [`<Transaction>`](http://tomcat.apache.org/tomcat-8.0-doc/config/context.html#Transaction) 添加一个资源工厂，用于对从 `java:comp/UserTransaction` 获得的 UserTransaction 接口进行实例化。     
 
@@ -80,7 +81,7 @@ Context envCtx = (Context) initCtx.lookup("java:comp/env");
 DataSource ds = (DataSource)
   envCtx.lookup("jdbc/EmployeeDB");
 
-// 分配并使用》》》
+// 分配并使用池中的连接
 Connection conn = ds.getConnection();
 ... use this connection to access the database ...
 conn.close();
@@ -96,9 +97,9 @@ conn.close();
 
 Tomcat 包含一系列资源工厂，能为 Web 应用提供各种服务，而且无需修改 Web 应用或部署描述符文件即能灵活配置（通过  `<Context>` 元素）。下面所列出的每一小节都详细介绍了标准资源工厂的配置与用途。  
 
-要想了解如何创建、安装、配置和使用你自己的自定义资源工厂类》》，请参看[添加自定义资源工厂](http://tomcat.apache.org/tomcat-8.0-doc/jndi-resources-howto.html#Adding_Custom_Resource_Factories)。   
+要想了解如何创建、安装、配置和使用你自己的自定义资源工厂类，请参看[添加自定义资源工厂](http://tomcat.apache.org/tomcat-8.0-doc/jndi-resources-howto.html#Adding_Custom_Resource_Factories)。   
 
-**注意**：在标准资源工厂中，只有“JDBC DataSource”和“User Transaction”工厂可适用于其他平台。只有当平台实现了 Java EE 规范时，则》》。而其他所有标准资源工厂，以及你自己编写的自定义资源工厂，则都是 Tomcat 所专属的，不适用于其他容器。   
+**注意**：在标准资源工厂中，只有“JDBC DataSource”和“User Transaction”工厂可适用于其他平台，而且这些平台必须实现了 Java EE 规范。而其他所有标准资源工厂，以及你自己编写的自定义资源工厂，则都是 Tomcat 所专属的，不适用于其他容器。   
 
 ### 一般 JavaBean 资源  
 
@@ -112,18 +113,55 @@ Tomcat 包含一系列资源工厂，能为 Web 应用提供各种服务，而�
 
 ####1. 创建 JavaBean 类   
 
-创建 JavaBean 类，在每次查看》look up的翻译？》资源工厂时，就创建它的实例。比如，假设你创建了一个名叫 `com.mycompany.MyBean` 的 JavaBean 类，如下所示：  
+创建一个 JavaBean 类，在每次查找资源工厂时，就创建它的实例。比如，假设你创建了一个名叫 `com.mycompany.MyBean` 的 JavaBean 类，如下所示：  
 
 ``` 
+package com.mycompany;
+
+public class MyBean {
+
+  private String foo = "Default Foo";
+
+  public String getFoo() {
+    return (this.foo);
+  }
+
+  public void setFoo(String foo) {
+    this.foo = foo;
+  }
+
+  private int bar = 0;
+
+  public int getBar() {
+    return (this.bar);
+  }
+
+  public void setBar(int bar) {
+    this.bar = bar;
+  }
+
+
+}
 
 ```
 
 
 ####2. 声明资源需求  
 
-接下来，修改 Web 应用部署描述符文件（`/WEB-INF/web.xml`），请求该 Bean 类的新实例》。最简单的方法是使用 `<resource-env-ref>` 元素，如下所示：  
+接下来，修改 Web 应用部署描述符文件（`/WEB-INF/web.xml`），声明 JNDI 名称，并据此请求该 Bean 类的新实例。最简单的方法是使用 `<resource-env-ref>` 元素，如下所示：  
 
 ``` 
+<resource-env-ref>
+  <description>
+    Object factory for MyBean instances.
+  </description>
+  <resource-env-ref-name>
+    bean/MyBeanFactory
+  </resource-env-ref-name>
+  <resource-env-ref-type>
+    com.mycompany.MyBean
+  </resource-env-ref-type>
+</resource-env-ref>
 
 ```
 
@@ -135,6 +173,12 @@ Tomcat 包含一系列资源工厂，能为 Web 应用提供各种服务，而�
 资源引用的典型用例如下所示：     
 
 ``` 
+Context initCtx = new InitialContext();
+Context envCtx = (Context) initCtx.lookup("java:comp/env");
+MyBean bean = (MyBean) envCtx.lookup("bean/MyBeanFactory");
+
+writer.println("foo = " + bean.getFoo() + ", bar = " +
+               bean.getBar());
 
 ```
 
@@ -144,6 +188,14 @@ Tomcat 包含一系列资源工厂，能为 Web 应用提供各种服务，而�
 为了配置 Tomcat 资源工厂，为 Web 应用的 [`<Context>`](http://tomcat.apache.org/tomcat-8.0-doc/config/context.html)元素添加下列元素：   
 
 ``` 
+<Context ...>
+  ...
+  <Resource name="bean/MyBeanFactory" auth="Container"
+            type="com.mycompany.MyBean"
+            factory="org.apache.naming.factory.BeanFactory"
+            bar="23"/>
+  ...
+</Context>
 
 ```
 
@@ -153,31 +205,93 @@ Tomcat 包含一系列资源工厂，能为 Web 应用提供各种服务，而�
 
 假设我们的 Bean 如下所示：   
 
-``` 
+```   
+package com.mycompany;
+
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+
+public class MyBean2 {
+
+  private InetAddress local = null;
+
+  public InetAddress getLocal() {
+    return local;
+  }
+
+  public void setLocal(InetAddress ip) {
+    local = ip;
+  }
+
+  public void setLocal(String localHost) {
+    try {
+      local = InetAddress.getByName(localHost);
+    } catch (UnknownHostException ex) {
+    }
+  }
+
+  private InetAddress remote = null;
+
+  public InetAddress getRemote() {
+    return remote;
+  }
+
+  public void setRemote(InetAddress ip) {
+    remote = ip;
+  }
+
+  public void host(String remoteHost) {
+    try {
+      remote = InetAddress.getByName(remoteHost);
+    } catch (UnknownHostException ex) {
+    }
+  }
+
+}
+
 
 ```
 
 
 该 Bean 有两个 `InetAddress` 类型的属性。第一个属性 `local` 还有第二种 setter 方法，传入的是一个字符串参数。默认 Tomcat BeanFactory 会使用自动侦测到的 setter 方法，并将其参数类型作为属性类型，然后抛出一个 NamingException（命名异常），因为它还没有准备好将给定字符串值转化为 `InetAddress`。我们可以让 Tomcat BeanFactory 使用其他的 setter 方法，如下所示：    
 
-``` 
+```   
+
+<Context ...>
+  ...
+  <Resource name="bean/MyBeanFactory" auth="Container"
+            type="com.mycompany.MyBean2"
+            factory="org.apache.naming.factory.BeanFactory"
+            forceString="local"
+            local="localhost"/>
+  ...
+</Context>
+
 
 ```
 
 bean 属性 `remote` 也可以从字符串中设置，但必须使用非标准方法 `host`。如下设置 `local` 和 `remote`：     
 
 ```
+<Context ...>
+  ...
+  <Resource name="bean/MyBeanFactory" auth="Container"
+            type="com.mycompany.MyBean2"
+            factory="org.apache.naming.factory.BeanFactory"
+            forceString="local,remote=host"
+            local="localhost"
+            remote="tomcat.apache.org"/>
+  ...
+</Context>
 
 ```
 
 
-如上所示，可以利用逗号作分隔符，将多个属性描述串联在一起放在 `forceString` 中。每一属性描述要么只包含属性名，要么由 `name = method` 的结构所组成。对于前者的情况，BeanFactory 会直接调用属性名的 setter 方法时；而对于后者，则通过调用方法 `method` 来设置属性名 `name`。》》》对于 `String` 或基本类型，或者相应的基本包装器类的属性，不必使用 `forceString`，会自动侦测正确的 setter 并实施参数类型转换。》》》       
+如上所示，可以利用逗号作分隔符，将多个属性描述串联在一起放在 `forceString` 中。每一属性描述要么只包含属性名，要么由 `name = method` 的结构所组成。对于前者的情况，BeanFactory 会直接调用属性名的 setter 方法；而对于后者，则通过调用方法 `method` 来设置属性名 `name`。对于 `String` 或基本类型，或者相应的基本包装器类的属性，不必使用 `forceString`。会自动侦测正确的 setter 并实施参数类型转换。      
 
 
 
 ### UserDatabase 资源       
-
-
 
 #### 0. 简介  
 
@@ -190,6 +304,14 @@ UserDatabase 资源通常被配置成通过 UserDataBase Realm 所使用的全�
 XML 文件通常位于 `$CATALINA_BASE/conf/tomcat-users.xml`，但也可以放在文件系统中的任何位置。我们建议把该文件放在 `$CATALINA_BASE/conf`。典型的 XML 应如下所示：   
 
 ```
+<?xml version='1.0' encoding='utf-8'?>
+<tomcat-users>
+  <role rolename="tomcat"/>
+  <role rolename="role1"/>
+  <user username="tomcat" password="tomcat" roles="tomcat"/>
+  <user username="both" password="tomcat" roles="tomcat,role1"/>
+  <user username="role1" password="tomcat" roles="role1"/>
+</tomcat-users>
 
 ```    
 
@@ -198,6 +320,13 @@ XML 文件通常位于 `$CATALINA_BASE/conf/tomcat-users.xml`，但也可以放�
 接下来，修改 `$CATALINA_BASE/conf/server.xml` 来创建基于此文件的 UserDataBase 资源。如下所示：  
 
 ```
+<Resource name="UserDatabase"
+          auth="Container"
+          type="org.apache.catalina.UserDatabase"
+          description="User database that can be updated and saved"
+          factory="org.apache.catalina.users.MemoryUserDatabaseFactory"
+          pathname="conf/tomcat-users.xml"
+          readonly="false" />
 
 ```  
 
@@ -210,6 +339,8 @@ XML 文件通常位于 `$CATALINA_BASE/conf/tomcat-users.xml`，但也可以放�
 #### 3. 配置 Realm    
 
 配置 UserDatabase Realm 以便使用该资源，详情可参看 [Realm 配置文档](》连接至已翻译好的页面》)  
+
+
 
 ### JavaMail 会话  
 
@@ -224,9 +355,26 @@ Tomcat 所包含的标准资源工厂可以为你创建 `javax.mail.Session` 会
 
 #### 1. 声明资源需求    
 
-首先应该做的是修改 Web 应用的部署描述符文件（`/WEB-INF/web.xml`），声明 JNDI 名称以便借此查找预配置会话。按照惯例，所有这样的名字都应该 `mail` 子上下文（相对于标准的 `java:comp/env` 命名上下文而言，这个命名上下文是所有提供的资源工厂的》》。）典型的 `web.xml` 项应该如下所示：   
+首先应该做的是修改 Web 应用的部署描述符文件（`/WEB-INF/web.xml`），声明 JNDI 名称以便借此查找预配置会话。按照惯例，所有这样的名字都应该解析到 `mail` 子上下文（相对于标准的 `java:comp/env` 命名上下文而言的，这个命名上下文是所有资源工厂的基准。）典型的 `web.xml` 项应该如下所示：   
 
 ```
+<resource-ref>
+  <description>
+    Resource reference to a factory for javax.mail.Session
+    instances that may be used for sending electronic mail
+    messages, preconfigured to connect to the appropriate
+    SMTP server.
+  </description>
+  <res-ref-name>
+    mail/Session
+  </res-ref-name>
+  <res-type>
+    javax.mail.Session
+  </res-type>
+  <res-auth>
+    Container
+  </res-auth>
+</resource-ref>
   
 ```
 
@@ -237,6 +385,18 @@ Tomcat 所包含的标准资源工厂可以为你创建 `javax.mail.Session` 会
 资源引用的典型用例如下所示：      
 
 ```
+Context initCtx = new InitialContext();
+Context envCtx = (Context) initCtx.lookup("java:comp/env");
+Session session = (Session) envCtx.lookup("mail/Session");
+
+Message message = new MimeMessage(session);
+message.setFrom(new InternetAddress(request.getParameter("from")));
+InternetAddress to[] = new InternetAddress[1];
+to[0] = new InternetAddress(request.getParameter("to"));
+message.setRecipients(Message.RecipientType.TO, to);
+message.setSubject(request.getParameter("subject"));
+message.setContent(request.getParameter("content"), "text/plain");
+Transport.send(message);
 
 ```  
 
@@ -248,12 +408,19 @@ Tomcat 所包含的标准资源工厂可以为你创建 `javax.mail.Session` 会
 为了配置 Tomcat 的资源工厂，在 [`<Context>`](http://tomcat.apache.org/tomcat-8.0-doc/config/context.html) 元素中添加以下元素：  
 
 ```
+<Context ...>
+  ...
+  <Resource name="mail/Session" auth="Container"
+            type="javax.mail.Session"
+            mail.smtp.host="localhost"/>
+  ...
+</Context>
 
 ```  
 
 注意，资源名（在这里，是 `mail/Session`）必须与 Web 应用部署描述符文件中所指定的值相匹配。对于 `mail.smtp.host` 参数值，可以用为你的网络提供 SMTP 服务的服务器来自定义。   
 
-  》》》额外的资源属性与值将转变成属性及值，并被传入 `javax.mail.Session.getInstance(java.util.Properties)`，作为参数集 `java.util.Properties` 中的一部分。除了 JavaMail 规范附件A中所定义的属性之外，个别的提供商可能还支持额外的属性。
+额外的资源属性与值将转换成相关的属性及值，并被传入 `javax.mail.Session.getInstance(java.util.Properties)`，作为参数集 `java.util.Properties` 中的一部分。除了 JavaMail 规范附件A中所定义的属性之外，个别的提供者可能还支持额外的属性。
 
 如果资源配置中包含 `password` 属性，以及 `mail.smtp.user` 或 `mail.user` 属性，那么 Tomcat 资源工厂将配置并添加 `javax.mail.Authenticator` 到邮件会话中。  
 
@@ -273,11 +440,11 @@ Tomcat 所包含的标准资源工厂可以为你创建 `javax.mail.Session` 会
 Tomcat 中的 `/examples` 应用中带有一个使用该资源工厂的范例。可以通过“JSP 范例”的链接来访问它。实际发送邮件的 servlet 的源代码则位于 `/WEB-INF/classes/SendMailServlet.java` 中。  
 
 
-**警告**：默认配置在 `localhost` 的 端口 25 中 》》SMTP 服务器。如果实际情况不符，则需要编辑该 Web 应用的 [`<Context>`](http://tomcat.apache.org/tomcat-8.0-doc/config/context.html) 元素，将 `mail.smtp.host` 参数的值修改为你的网络上的 SMTP 服务器的主机名。   
+**警告**：默认配置在 `localhost` 的 端口 25 上的 SMTP 服务器。如果实际情况不符，则需要编辑该 Web 应用的 [`<Context>`](http://tomcat.apache.org/tomcat-8.0-doc/config/context.html) 元素，将 `mail.smtp.host` 参数的值修改为你的网络上的 SMTP 服务器的主机名。   
+
+
 
 ### JDBC 数据源     
-
-
 
 #### 0. 简介   
 
@@ -290,7 +457,7 @@ Tomcat 中的 `/examples` 应用中带有一个使用该资源工厂的范例。
 - [http://java.sun.com/products/jdbc/jdbc20.stdext.pdf](http://java.sun.com/products/jdbc/jdbc20.stdext.pdf) JDBC 2.0 标准扩展 API（包括 `javax.sql.DataSource` API）。该包现在被称为“JDBC 可选包”。   
 - [http://www.oracle.com/technetwork/java/javaee/overview/index.htm](http://www.oracle.com/technetwork/java/javaee/overview/index.htm) Java EE 平台规范（介绍了所有 Java EE 平台必须为应用提供的 JDBC 附加功能）。    
 
-**注意**：Tomcat 默认所支持的数据源是基于 Common Project 的 **DBCP** 连接池。但也可能使用其他任何连接池，只要它们实现了 `javax.sql.DataSource`，》》通过编写自定义的资源工厂，详见[下文](》》)。  
+**注意**：Tomcat 默认所支持的数据源是基于 [Commons 项目](http://commons.apache.org) 的 **DBCP** 连接池。但也可以通过编写自定义的资源工厂，使用其他实现了 `javax.sql.DataSource` 的连接池，详见<a href="#AddCustomResFactories">下文</a>。  
    
 
 #### 1. 安装 JDBC 驱动     
@@ -304,6 +471,23 @@ Tomcat 中的 `/examples` 应用中带有一个使用该资源工厂的范例。
 下一步，修改 Web 应用的部署描述符文件（`/WEB-INF/web.xml`），声明 JNDI 名称以便借此查找预配置的数据源。按照惯例，所有这样的名称都应该在`jdbc` 子上下文中声明（这个“子”是相对于标准的 `java:comp/env` 环境命名上下文而言的。`java:comp/env` 环境命名上下文是所有资源工厂的根引用）。典型的 `web.xml` 文件应如下所示：   
 
 ```
+<resource-ref>
+  <description>
+    Resource reference to a factory for java.sql.Connection
+    instances that may be used for talking to a particular
+    database that is configured in the <Context>
+    configurartion for the web application.
+  </description>
+  <res-ref-name>
+    jdbc/EmployeeDB
+  </res-ref-name>
+  <res-type>
+    javax.sql.DataSource
+  </res-type>
+  <res-auth>
+    Container
+  </res-auth>
+</resource-ref>
 
 ```
 
@@ -316,7 +500,16 @@ Tomcat 中的 `/examples` 应用中带有一个使用该资源工厂的范例。
 
 资源引用的典型用例如下所示：     
 
-``` 
+```   
+Context initCtx = new InitialContext();
+Context envCtx = (Context) initCtx.lookup("java:comp/env");
+DataSource ds = (DataSource)
+  envCtx.lookup("jdbc/EmployeeDB");
+
+Connection conn = ds.getConnection();
+... use this connection to access the database ...
+conn.close();
+
 
 ```
 
@@ -327,6 +520,19 @@ Tomcat 中的 `/examples` 应用中带有一个使用该资源工厂的范例。
 为了配置 Tomcat 的资源工厂，在 [`<Context>`](http://tomcat.apache.org/tomcat-8.0-doc/config/context.html) 元素中添加以下元素：  
 
 ```
+<Context ...>
+  ...
+  <Resource name="jdbc/EmployeeDB"
+            auth="Container"
+            type="javax.sql.DataSource"
+            username="dbusername"
+            password="dbpassword"
+            driverClassName="org.hsql.jdbcDriver"
+            url="jdbc:HypersonicSQL:database"
+            maxTotal="8"
+            maxIdle="4"/>
+  ...
+</Context>
 
 ```  
 
@@ -375,15 +581,15 @@ Tomcat 标准数据源资源工厂（`org.apache.tomcat.dbcp.dbcp2.BasicDataSour
 
 最后再介绍一些可以对连接池行为进行进一步微调的属性：   
 
-- **defaultAutoCommit** 布尔值，true 或 false。由连接池所创建的连接的默认自动提交状态。默认为 true。  
-- **defaultReadOnly** 布尔值，true 或 false。由连接池所创建的连接的默认只读状态。默认为 false。  
+- **defaultAutoCommit** 布尔值，`true` 或 `false`。由连接池所创建的连接的默认自动提交状态。默认为 true。  
+- **defaultReadOnly** 布尔值，`true` 或 `false`。由连接池所创建的连接的默认只读状态。默认为 false。  
 - **defaultTransactionIsolation** 设定默认的事务隔离级别。可取值为：`NONE`、`READ_COMMITTED`、`READ_UNCOMMITTED`、`REPEATABLE_READ` 与 `SERIALIZABLE`。没有默认设置。   
-- **poolPreparedStatements** 布尔值，true 或 false。 》》》  
+- **poolPreparedStatements** 布尔值，true 或 false。 是否池化 PreparedStatements 和 CallableStatements。默认为 `false`。
 - **maxOpenPreparedStatements** 同时能被语句池分配的开放语句的最大数目。默认为 -1（无限）   
-- **defaultCatalog**  ？》》
+- **defaultCatalog**  catalog 默认值。默认值：未设定。
 - **connectionInitSqls** 连接建立后运行的一系列 SQL 语句。各个语句间用分号（`;`）进行分隔。默认为：没有语句。  
 - **connectionInitSqls** 传入驱动用于创建连接的驱动特定属性。每一属性都以 `name = value` 的形式给出，多个属性用分号（`;`）进行分隔。默认：没有属性。   
-- **accessToUnderlyingConnectionAllowed** 布尔值，true 或 false。 是否可访问底层连接。默认为 false。   
+- **accessToUnderlyingConnectionAllowed** 布尔值，`true` 或 `false`。 是否可访问底层连接。默认为 `false`。   
 
 
 要想更详细地了解这些属性，请参阅 commons-dbcp 文档。   
@@ -392,7 +598,7 @@ Tomcat 标准数据源资源工厂（`org.apache.tomcat.dbcp.dbcp2.BasicDataSour
 
 
 
-### 添加自定义资源工厂    
+### <a name ="AddCustomResFactories">添加自定义资源工厂</a>    
 
 如果标准资源工厂无法满足你的需求，你还可以自己编写资源工厂，然后将其集成到 Tomcat 中，在 Web 应用的 [`<Context>`](http://tomcat.apache.org/tomcat-8.0-doc/config/context.html) 元素中配置该工厂的使用方式。在下面的范例中，我们将创建一个资源工厂，只懂得如何 `com.mycompany.MyBean` bean
 
@@ -407,6 +613,50 @@ Tomcat 标准数据源资源工厂（`org.apache.tomcat.dbcp.dbcp2.BasicDataSour
 创建一个能够生成 `MyBean` 实例的资源工厂，需要像下面这样来创建类：   
 
 ```
+package com.mycompany;
+
+import java.util.Enumeration;
+import java.util.Hashtable;
+import javax.naming.Context;
+import javax.naming.Name;
+import javax.naming.NamingException;
+import javax.naming.RefAddr;
+import javax.naming.Reference;
+import javax.naming.spi.ObjectFactory;
+
+public class MyBeanFactory implements ObjectFactory {
+
+  public Object getObjectInstance(Object obj,
+      Name name, Context nameCtx, Hashtable environment)
+      throws NamingException {
+
+      // Acquire an instance of our specified bean class
+      MyBean bean = new MyBean();
+
+      // Customize the bean properties from our attributes
+      Reference ref = (Reference) obj;
+      Enumeration addrs = ref.getAll();
+      while (addrs.hasMoreElements()) {
+          RefAddr addr = (RefAddr) addrs.nextElement();
+          String name = addr.getType();
+          String value = (String) addr.getContent();
+          if (name.equals("foo")) {
+              bean.setFoo(value);
+          } else if (name.equals("bar")) {
+              try {
+                  bean.setBar(Integer.parseInt(value));
+              } catch (NumberFormatException e) {
+                  throw new NamingException("Invalid 'bar' value " + value);
+              }
+          }
+      }
+
+      // Return the customized instance
+      return (bean);
+
+  }
+
+}
 
 ```
 
@@ -414,17 +664,29 @@ Tomcat 标准数据源资源工厂（`org.apache.tomcat.dbcp.dbcp2.BasicDataSour
 > // Customize the bean properties from our attributes 从属性中自定义 bean 属性。  
 > // Return the customized instance 返回自定义实例 
 
-在上例中，无条件地创建了 `com.mycompany.MyBean` 的一个新实例， 并根据工厂配置中的 `<ResourceParams>` 元素（下文详述）包括的参数来填充这一实例。你应该记住，必须忽略任何名为 `factory` 的参数——参数应该用来指定工厂类自身的名字（`com.mycompany.MyBeanFactory`），而不是配置的 bean 属性。  
+在上例中，无条件地创建了 `com.mycompany.MyBean` 类的一个新实例， 并根据工厂配置中的 `<ResourceParams>` 元素（下文详述）包括的参数来填充这一实例。你应该记住，必须忽略任何名为 `factory` 的参数——参数应该用来指定工厂类自身的名字（`com.mycompany.MyBeanFactory`），而不是配置的 bean 属性。  
 
 关于 `ObjectFactory` 的更多信息，可参见 [JNDI 服务提供者接口（SPI）规范](http://docs.oracle.com/javase/7/docs/technotes/guides/jndi/index.html)。   
 
-需要编译该类》包含所有 JAR 文件的》这样，所需的类文件就能被 Catalina 内部资源与 Web 应用看到了。
+首先参照一个 `$CATALINA_HOME/lib` 目录中包含所有 JAR 文件的类路径来编译该类。完成之后，将这个工厂类以及相应的 Bean 类解压缩到 `$CATALINA_HOME/lib`，或者 `$CATALINA_HOME/lib` 内的一个 JAR 文件中。这样，所需的类文件就能被 Catalina 内部资源与 Web 应用看到了。
 
 #### 2. 声明资源需求  
 
 下一步，修改 Web 应用的部署描述符文件（`/WEB-INF/web.xml`），声明 JNDI 名称以便借此请求该 bean 的新实例。最简单的方法是使用 `<resource-env-ref>` 元素，如下所示：  
 
-```
+```  
+<resource-env-ref>
+  <description>
+    Object factory for MyBean instances.
+  </description>
+  <resource-env-ref-name>
+    bean/MyBeanFactory
+  </resource-env-ref-name>
+  <resource-env-ref-type>
+    com.mycompany.MyBean
+  </resource-env-ref-type>
+<resource-env-ref>
+
 
 ```
 
@@ -435,6 +697,12 @@ Tomcat 标准数据源资源工厂（`org.apache.tomcat.dbcp.dbcp2.BasicDataSour
 资源引用的典型用例如下所示：     
 
 ``` 
+Context initCtx = new InitialContext();
+Context envCtx = (Context) initCtx.lookup("java:comp/env");
+MyBean bean = (MyBean) envCtx.lookup("bean/MyBeanFactory");
+
+writer.println("foo = " + bean.getFoo() + ", bar = " +
+               bean.getBar());
 
 ```
 
@@ -446,6 +714,15 @@ Tomcat 标准数据源资源工厂（`org.apache.tomcat.dbcp.dbcp2.BasicDataSour
 为了配置 Tomcat 的资源工厂，在 [`<Context>`](http://tomcat.apache.org/tomcat-8.0-doc/config/context.html) 元素中添加以下元素：  
 
 ```
+<Context ...>
+  ...
+  <Resource name="bean/MyBeanFactory" auth="Container"
+            type="com.mycompany.MyBean"
+            factory="com.mycompany.MyBeanFactory"
+            singleton="false"
+            bar="23"/>
+  ...
+</Context>
 
 ```  
 
@@ -453,20 +730,3 @@ Tomcat 标准数据源资源工厂（`org.apache.tomcat.dbcp.dbcp2.BasicDataSour
 
 另外，你肯定能注意到，从应用开发者的角度来看，资源环境引用的声明，以及请求新实例的编程方式，都跟**通用 JavaBean 资源**（Generic JavaBean Resources）范例所用方式如出一辙。这揭示了使用 JNDI 资源封装功能的一个优点：只要维持兼容的 API，无需修改使用资源的应用，只需改变底层实现。   
   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- 
